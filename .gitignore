@@ -1,0 +1,77 @@
+# Environment variables (CRÍTICO)
+.env
+.env.local
+.env.*.local
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories
+vendor/
+
+# Go build cache
+.go-build/
+*.go-build
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS specific
+Thumbs.db
+Desktop.ini
+
+# Database files (local development)
+*.db
+*.sqlite
+*.sqlite3
+
+# JWT keys and certificates (CRÍTICO)
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Coverage reports
+coverage.txt
+coverage.html
+*.coverprofile
+
+# Debug files
+debug
+debug.test
+__debug_bin
+
+# Air live reload tool
+tmp/
+.air.toml 

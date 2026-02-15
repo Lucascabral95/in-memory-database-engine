@@ -1,0 +1,44 @@
+{
+  "name": "in-memory-database-engine",
+  "version": "1.0.0",
+  "description": "API REST para gestión de inventario y órdenes de e-commerce con Go, Gin y GORM",
+  "main": "cmd/api/main.go",
+  "scripts": {
+    "dev": "go run cmd/api/main.go",
+    "docker:up": "docker-compose up -d --build",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f --tail=100",
+    "docker:restart": "docker-compose restart",
+    "docker:ssh": "docker-compose exec api sh",
+    "build": "go build -o bin/api.exe cmd/api/main.go",
+    "build:linux": "set GOOS=linux&& set GOARCH=amd64&& go build -o bin/api-linux cmd/api/main.go",
+    "deps": "go mod download",
+    "deps:tidy": "go mod tidy",
+    "deps:update": "go get -u ./...",
+    "fmt": "go fmt ./...",
+    "vet": "go vet ./...",
+    "test": "go test ./...",
+    "test:coverage": "go test -cover ./...",
+    "test:verbose": "go test -v ./...",
+    "start": "node package.json",
+    "help": "echo 'Available scripts: dev, docker:up, docker:down, build, deps, test'"
+  },
+  "keywords": [
+    "go",
+    "gin",
+    "aws",
+    "api",
+    "rest",
+    "ecommerce",
+    "postgresql",
+    "gorm",
+    "jwt",
+    "docker"
+  ],
+  "author": "Lucas <lucassimple@hotmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lucascabral95/in-memory-database-engine"
+  }
+}
