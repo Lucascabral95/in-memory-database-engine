@@ -1,22 +1,25 @@
-version: '3.9'
+name: in-memory-database-engine
 
 services:
   api:
+    container_name: in-memory-db-api
+    image: ${DOCKER_IMAGE:-in-memory-db-api}:${DOCKER_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: in-memory-db-api
+    env_file:
+      - .env
+    environment:
+      PORT: 8080
+      REDIS_TCP_ENABLED: ${REDIS_TCP_ENABLED:-false}
+      REDIS_TCP_PORT: ${REDIS_TCP_PORT:-6379}
     ports:
       - "${PORT:-8080}:8080"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - PORT=8080
-      - ENV=${ENV:-development}
-      - JWT_SECRET=${JWT_SECRET:-change_this_secret_in_production}
+      - "${REDIS_TCP_PORT:-6379}:${REDIS_TCP_PORT:-6379}"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/products || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s

@@ -7,13 +7,21 @@ import (
 	"gorm.io/gorm"
 )
 
+type StockMovementReason string
+
+const (
+	StockMovementReasonSale       StockMovementReason = "SALE"
+	StockMovementReasonRestock    StockMovementReason = "RESTOCK"
+	StockMovementReasonAdjustment StockMovementReason = "ADJUSTMENT"
+)
+
 type StockMovement struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ProductID uuid.UUID `gorm:"type:uuid;not null;index" json:"product_id"`
-	Product   Product   `gorm:"foreignKey:ProductID;references:ID" json:"product,omitempty"`
-	Quantity  int       `gorm:"not null" json:"quantity"`
-	Reason    string    `gorm:"size:255" json:"reason"` // "SALE", "RESTOCK", "ADJUSTMENT"
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID           `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ProductID uuid.UUID           `gorm:"type:uuid;not null;index" json:"product_id"`
+	Product   Product             `gorm:"foreignKey:ProductID;references:ID" json:"product,omitempty"`
+	Quantity  int                 `gorm:"not null" json:"quantity"`
+	Reason    StockMovementReason `gorm:"size:255" json:"reason"`
+	CreatedAt time.Time           `json:"created_at"`
 }
 
 func (sm *StockMovement) BeforeCreate(tx *gorm.DB) error {

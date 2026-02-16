@@ -7,6 +7,7 @@ import (
 	"github.com/lucas-dev/in-memory-db/internal/config"
 	"github.com/lucas-dev/in-memory-db/internal/handler"
 	"github.com/lucas-dev/in-memory-db/internal/service"
+	"github.com/lucas-dev/in-memory-db/internal/storage"
 	"github.com/lucas-dev/in-memory-db/pkg/middleware"
 )
 
@@ -17,11 +18,13 @@ func SetupRoutes(
 	userService *service.UserService,
 	productService *service.ProductService,
 	orderService *service.OrderService,
+	memoryStore *storage.MemoryStore,
 ) {
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 	userHandler := handler.NewUserHandler(userService)
 	productHandler := handler.NewProductHandler(productService)
 	orderHandler := handler.NewOrderHandler(orderService)
+	cartHandler := handler.NewCartHandler(memoryStore, productService, orderService)
 
 	r.GET("/health", middleware.AuthMiddleware(cfg.JWTSecret), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -63,7 +66,19 @@ func SetupRoutes(
 		orders.GET("", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.GetAllOrders)
 		orders.GET("/:id", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.GetOrderByID)
 		orders.POST("", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.CreateOrder)
-		orders.PATCH("/:id", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.UpdateOrder)
-		orders.DELETE("/:id", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.DeleteOrder)
+		orders.POST("/:id/pay", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.OrderUpdatePay)
+		orders.PATCH("/:id", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.UpdateStatusOrder)
+		// orders.DELETE("/:id", middleware.AuthMiddleware(cfg.JWTSecret), orderHandler.DeleteOrder)
+	}
+
+	cart := r.Group("/cart", middleware.AuthMiddleware(cfg.JWTSecret))
+	{
+		// Cart operations
+		cart.POST("/items", cartHandler.AddToCart)                    // Add product to cart
+		cart.PATCH("/items/:product_id", cartHandler.UpdateCartItem)  // Update cart item quantity
+		cart.DELETE("/items/:product_id", cartHandler.RemoveCartItem) // Remove product from cart
+		cart.GET("", cartHandler.GetCart)                             // Get cart
+		cart.DELETE("", cartHandler.ClearCart)                        // Clear cart
+		cart.POST("/checkout", cartHandler.Checkout)                  // Checkout
 	}
 }

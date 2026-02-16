@@ -4,12 +4,21 @@
   "description": "API REST para gestión de inventario y órdenes de e-commerce con Go, Gin y GORM",
   "main": "cmd/api/main.go",
   "scripts": {
-    "dev": "go run cmd/api/main.go",
-    "docker:up": "docker-compose up -d --build",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f --tail=100",
-    "docker:restart": "docker-compose restart",
-    "docker:ssh": "docker-compose exec api sh",
+    "dev": "go run cmd/api/main.go",  
+    "docker:up": "docker compose up -d",
+
+    "docker:up:build": "docker compose up -d --build",
+    "docker:logs": "docker compose logs -f --tail=200 api",
+    "docker:down": "docker compose down --remove-orphans",
+    "docker:image:build:push": "npm run docker:image:build && npm run docker:image:tag && npm run docker:image:push",
+    
+    "docker:ps": "docker compose ps",
+    "docker:restart": "docker compose restart api",
+    "docker:exec": "docker compose exec api sh",
+    "docker:build": "docker compose build api",
+    "docker:image:build": "docker build -t in-memory-db-api:latest .",
+    "docker:image:tag": "docker tag in-memory-db-api:latest lucascabral95/in-memory-database-engine:latest",
+    "docker:image:push": "docker push lucascabral95/in-memory-database-engine:latest",
     "build": "go build -o bin/api.exe cmd/api/main.go",
     "build:linux": "set GOOS=linux&& set GOARCH=amd64&& go build -o bin/api-linux cmd/api/main.go",
     "deps": "go mod download",
@@ -20,8 +29,8 @@
     "test": "go test ./...",
     "test:coverage": "go test -cover ./...",
     "test:verbose": "go test -v ./...",
-    "start": "node package.json",
-    "help": "echo 'Available scripts: dev, docker:up, docker:down, build, deps, test'"
+    "start": "go run cmd/api/main.go",
+    "help": "echo 'Scripts: dev, docker:up, docker:up:build, docker:build, docker:image:build:push, test'"
   },
   "keywords": [
     "go",
