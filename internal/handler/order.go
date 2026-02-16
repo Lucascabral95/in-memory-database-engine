@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lucas-dev/in-memory-db/internal/model"
 	"github.com/lucas-dev/in-memory-db/internal/service"
+	"github.com/lucas-dev/in-memory-db/pkg/utils"
 )
 
 type OrderHandler struct {
@@ -20,26 +22,18 @@ func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
 }
 
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
-	userIDStr, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
-		return
-	}
-
-	userID, err := uuid.Parse(userIDStr.(string))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de usuario inválido en token"})
+	userID, ok := h.getAuthUserID(c)
+	if !ok {
 		return
 	}
 
 	var order model.Order
 	if err := c.ShouldBindJSON(&order); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON inválido: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON invalido: " + err.Error()})
 		return
 	}
 
 	var totalAmountForProducts float64
-
 	for _, price := range order.Items {
 		totalAmountForProducts += price.PriceAtMoment * float64(price.Quantity)
 	}
@@ -58,7 +52,12 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 }
 
 func (h *OrderHandler) GetAllOrders(g *gin.Context) {
-	orders, err := h.orderService.GetAllOrders()
+	authUserID, ok := h.getAuthUserID(g)
+	if !ok {
+		return
+	}
+
+	orders, err := h.orderService.GetOrdersByUserID(authUserID.String())
 	if err != nil {
 		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -71,64 +70,144 @@ func (h *OrderHandler) GetOrderByID(g *gin.Context) {
 	orderID := g.Param("id")
 
 	if orderID == "" {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		g.JSON(http.StatusBadRequest, gin.H{"error": "ID invalido"})
 		return
 	}
 
 	if _, err := uuid.Parse(orderID); err != nil {
-		g.JSON(http.StatusBadRequest, gin.H{"error": "UUID inválido"})
+		g.JSON(http.StatusBadRequest, gin.H{"error": "UUID invalido"})
 		return
 	}
 
-	order, err := h.orderService.GetOrderByID(orderID)
-	if err != nil {
-		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	order, ok := h.getOwnedOrder(g, orderID, "No tenes permisos para ver esta orden")
+	if !ok {
 		return
 	}
 
 	g.JSON(http.StatusOK, order)
 }
 
-func (h *OrderHandler) UpdateOrder(c *gin.Context) {
+// func (h *OrderHandler) DeleteOrder(c *gin.Context) {
+// 	orderID := c.Param("id")
+//
+// 	if _, err := uuid.Parse(orderID); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "UUID invalido"})
+// 		return
+// 	}
+//
+// 	err := h.orderService.DeleteOrder(orderID)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 	}
+//
+// 	c.JSON(http.StatusOK, gin.H{"message": "Orden eliminada exitosamente"})
+// }
+
+func (h *OrderHandler) UpdateStatusOrder(c *gin.Context) {
 	orderID := c.Param("id")
 
 	if orderID == "" {
 		c.JSON(http.StatusBadRequest, "Debe mandar un OrderID")
+		return
 	}
 
 	_, err := uuid.Parse(orderID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, "UUID inválido")
+		c.JSON(http.StatusBadRequest, "UUID invalido")
 		return
 	}
 
-	var newOrder model.Order
+	if _, ok := h.getOwnedOrder(c, orderID, "No tenes permisos para modificar esta orden"); !ok {
+		return
+	}
+
+	var newOrder model.UpdateOrderStatusRequest
 	if err := c.ShouldBindJSON(&newOrder); err != nil {
-		c.JSON(http.StatusBadRequest, "Solo puedo modificar propiedades válidas de la orden")
+		c.JSON(http.StatusBadRequest, "Solo puedo modificar propiedades validas de la orden")
 		return
 	}
 
-	res, err := h.orderService.UpdateOrder(&newOrder, orderID)
+	if !utils.IsValidOrderStatus(newOrder.Status) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Estado invalido. Debe ser: PENDING, PAID, SHIPPED o CANCELLED"})
+		return
+	}
+
+	err = h.orderService.UpdateStatusOrder(&newOrder, orderID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Orden actualizada exitosamente", "data": res})
+	c.JSON(http.StatusOK, gin.H{"message": "Orden actualizada exitosamente"})
 }
 
-func (h *OrderHandler) DeleteOrder(c *gin.Context) {
+func (h *OrderHandler) OrderUpdatePay(c *gin.Context) {
 	orderID := c.Param("id")
 
 	if _, err := uuid.Parse(orderID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "UUID inválido"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "UUID de la orden no valido"})
 		return
 	}
 
-	err := h.orderService.DeleteOrder(orderID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if _, ok := h.getOwnedOrder(c, orderID, "No tenes permisos para pagar esta orden"); !ok {
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Orden eliminada exitosamente"})
+	if errOrderPay := h.orderService.OrderUpdatePay(orderID); errOrderPay != nil {
+		switch {
+		case errors.Is(errOrderPay, service.ErrInsufficientStock):
+			c.JSON(http.StatusConflict, gin.H{"error": "Stock insuficiente para pagar la orden"})
+		case errors.Is(errOrderPay, service.ErrOrderNotPending):
+			c.JSON(http.StatusConflict, gin.H{"error": "La orden no esta en estado PENDING"})
+		case errors.Is(errOrderPay, service.ErrOrderNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "No se encontro la orden"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo cambiar el estado de la orden a pagada"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Orden pagada exitosamente"})
+}
+
+func (h *OrderHandler) getAuthUserID(c *gin.Context) (uuid.UUID, bool) {
+	userIDRaw, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
+		return uuid.Nil, false
+	}
+
+	userIDStr, ok := userIDRaw.(string)
+	if !ok || userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "ID de usuario invalido en token"})
+		return uuid.Nil, false
+	}
+
+	authUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "UUID de usuario invalido"})
+		return uuid.Nil, false
+	}
+
+	return authUserID, true
+}
+
+func (h *OrderHandler) getOwnedOrder(c *gin.Context, orderID, forbiddenMessage string) (*model.Order, bool) {
+	authUserID, ok := h.getAuthUserID(c)
+	if !ok {
+		return nil, false
+	}
+
+	order, err := h.orderService.GetOrderByID(orderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No se encontro la orden"})
+		return nil, false
+	}
+
+	if order.UserID != authUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": forbiddenMessage})
+		return nil, false
+	}
+
+	return order, true
 }

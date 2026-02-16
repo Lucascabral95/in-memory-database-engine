@@ -1,661 +1,481 @@
-<h1 align="center">In-Memory Database Engine: E-Commerce API</h1>
+# In-Memory Database Engine: E-Commerce API
 
-<p align="center">
-  API REST robusta para gestión de inventario y órdenes de e-commerce con arquitectura limpia, autenticación JWT y PostgreSQL.
-</p>
+API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL y carrito en memoria con expiracion de 24 horas.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go Version"/>
-  <img src="https://img.shields.io/badge/Gin-Framework-6BA338?style=for-the-badge&logo=gin&logoColor=white" alt="Gin Framework"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
-  <img src="https://img.shields.io/badge/JWT-Authentication-FF6600?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white" alt="JWT"/>
-</p>
+## Tabla de contenidos
 
-***
-
-## Table of contents
-
-- [Descripción general](#descripción-general)
-- [⚙️ Características principales](#️-características-principales)
-- [🏛️ Arquitectura del sistema](#️-arquitectura-del-sistema)
-  - [Flujo de datos](#flujo-de-datos)
-  - [Diagrama de secuencia](#diagrama-de-secuencia)
+- [Descripcion general](#descripcion-general)
+- [Caracteristicas principales](#caracteristicas-principales)
+- [Arquitectura del sistema](#arquitectura-del-sistema)
+- [Flujo de checkout y pago con control de stock](#flujo-de-checkout-y-pago-con-control-de-stock)
+- [Carrito en memoria (24h) y Redis TCP opcional](#carrito-en-memoria-24h-y-redis-tcp-opcional)
 - [Estructura del proyecto](#estructura-del-proyecto)
-- [📦 Modelos de datos](#-modelos-de-datos)
-  - [Relaciones entre entidades](#relaciones-entre-entidades)
-- [🛠️ Catálogo de endpoints](#️-catálogo-de-endpoints)
-  - [🔐 Autenticación](#-autenticación)
-  - [📦 Categorías](#-categorías)
-  - [🎯 Productos](#-productos)
-  - [🛒 Órdenes](#️-órdenes)
-- [🚀 Guía de instalación y ejecución](#-guía-de-instalación-y-ejecución)
-- [🧪 Guía de pruebas con cURL](#-guía-de-pruebas-con-curl)
-- [🔒 Variables de entorno](#-variables-de-entorno)
-- [🛠️ Scripts y comandos](#️-scripts-y-comandos)
+- [Modelos de datos](#modelos-de-datos)
+- [Catalogo de endpoints](#catalogo-de-endpoints)
+- [Guia de instalacion y ejecucion](#guia-de-instalacion-y-ejecucion)
+- [Guia de pruebas paso a paso con cURL](#guia-de-pruebas-paso-a-paso-con-curl)
+- [Variables de entorno](#variables-de-entorno)
+- [Scripts y comandos](#scripts-y-comandos)
 - [Contribuciones](#contribuciones)
-  - [Convenciones de Commits](#convenciones-de-commits)
 - [Licencia](#licencia)
-- [📬 Contacto](#-contacto)
+- [Contacto](#contacto)
 
-## Descripción general
+## Descripcion general
 
-**In-Memory DB** es una API REST completa para la gestión de inventario y procesamiento de órdenes de un e-commerce, construida con **Go** y el framework **Gin**. A pesar del nombre del repositorio, la aplicación utiliza **PostgreSQL** como base de datos persistente con **GORM** como ORM, implementando una arquitectura limpia y escalable.
+Este proyecto implementa una API de e-commerce con:
 
-La solución proporciona una separación clara de responsabilidades mediante el patrón **Repository-Service-Handler**, con autenticación basada en **JWT**, gestión de stock, y un sistema de órdenes con múltiples estados (PENDING, PAID, SHIPPED, CANCELLED).
+- Persistencia en PostgreSQL para usuarios, productos, ordenes y stock movements.
+- Carrito en memoria RAM por usuario autenticado (JWT) con TTL de 24 horas.
+- Checkout que crea orden y ejecuta pago con validacion transaccional de stock.
+- Servidor TCP compatible con comandos basicos RESP (`PING`, `SET`, `GET`, `DEL`) para un "redis casero" opcional.
 
-El sistema está diseñado para ser fácilmente extensible, mantenible y testeable, siguiendo los principios de **Clean Architecture** y **Dependency Injection**.
+La aplicacion sigue el patron `Handler -> Service -> Repository -> Database`.
 
-***
+## Caracteristicas principales
 
-<a id="️-características-principales"></a>
-## ⚙️ Características principales
+- Arquitectura limpia y separacion de responsabilidades.
+- Autenticacion JWT.
+- CRUD de categorias y productos.
+- Ordenes con estados `PENDING`, `PAID`, `SHIPPED`, `CANCELLED`.
+- Pago de orden con control estricto de stock.
+- Descuento de stock en transaccion y registro de `StockMovement` con razon `SALE`.
+- Carrito en memoria con TTL 24h renovado en escrituras.
+- Endpoints de carrito para agregar, actualizar, remover items, limpiar carrito y checkout.
+- Ownership enforcement en ordenes: cada usuario solo puede ver/modificar/pagar sus ordenes.
+- Redis TCP opcional compartiendo el mismo `MemoryStore`.
 
-- **Arquitectura limpia**: Separación clara en capas (Handler → Service → Repository → Database) con Dependency Injection
-- **Autenticación JWT**: Tokens seguros con expiración de 30 días para proteger endpoints sensibles
-- **Gestión completa del inventario**: CRUD de categorías y productos con control de stock
-- **Sistema de órdenes**: Flujo completo desde PENDING hasta SHIPPED con múltiples estados
-- **Autenticación de usuarios**: Registro, login con bcrypt y eliminación de cuentas
-- **Soft deletes**: Eliminación lógica de registros para auditoría y recuperación
-- **UUID v4**: Identificadores únicos y seguros para todas las entidades
-- **Migraciones automáticas**: Sincronización automática del esquema con GORM
-- **Validación de datos**: Validación robusta en handlers y servicios
-- **Logging configurable**: Diferentes niveles de log según entorno (development/production)
-- **Código modular**: Paquetes reutilizables (JWT, password hashing, middleware)
-- **Base de datos serverless**: Compatible con PostgreSQL en la nube (Neon Tech)
+## Arquitectura del sistema
 
-***
+Capas:
 
-<a id="️-arquitectura-del-sistema"></a>
-## 🏛️ Arquitectura del sistema
+1. `internal/handler`: entrada HTTP y validaciones de request/response.
+2. `internal/service`: reglas de negocio.
+3. `internal/repository`: acceso a datos con GORM y transacciones.
+4. `internal/database`: conexion y migraciones.
+5. `internal/storage` + `internal/server`: memoria en RAM + protocolo RESP opcional.
 
-<p align="center">
-  <img src="https://go.dev/blog/go-brand/Go-Logo/PNG/Go-Logo_Aqua.png"
-       alt="Go Gopher"
-       width="120"/>
-</p>
+Dependencias inyectadas desde `cmd/api/main.go`.
 
-### Patrón de arquitectura por capas
+## Flujo de checkout y pago con control de stock
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         CLIENT (HTTP)                        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     GIN ROUTER (LAYER)                       │
-│  /categories  │  /users  │  /products  │  /orders           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   MIDDLEWARE (AUTH JWT)                      │
-│         Validación de token y extracción de claims          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      HANDLER LAYER                           │
-│  CategoryHandler │ UserHandler │ ProductHandler │ OrderHandler│
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       SERVICE LAYER                          │
-│   Lógica de negocio │ Validaciones │ Reglas de dominio      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    REPOSITORY LAYER                          │
-│     AbstractDataAccess │ Interfaces │ Implementaciones GORM │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     POSTGRESQL (DB)                          │
-│           Tablas: users, categories, products, orders        │
-└─────────────────────────────────────────────────────────────┘
-```
+Flujo actual de `POST /cart/checkout`:
 
-### Flujo de Dependency Injection
+1. Lee carrito desde RAM del usuario autenticado.
+2. Revalida productos y calcula total.
+3. Crea orden `PENDING`.
+4. Ejecuta pago (`OrderUpdatePay`) dentro de transaccion:
+   - Bloquea filas de productos (`FOR UPDATE`).
+   - Verifica stock por producto.
+   - Descuenta stock.
+   - Inserta `StockMovement` con `Reason=SALE` y `Quantity` negativa.
+   - Cambia orden a `PAID`.
+5. Si no hay stock, responde `409` e intenta cancelar la orden a `CANCELLED`.
+6. Solo si paga correctamente, limpia el carrito en RAM.
 
-```go
-// En cmd/api/main.go - Cadena de inyección de dependencias
+## Carrito en memoria (24h) y Redis TCP opcional
 
-db := database.InitDB(cfg)
-         │
-         ▼
-categoryRepo := repository.NewCategoryRepository(db)
-categoryService := service.NewCategoryService(categoryRepo)
-categoryHandler := handler.NewCategoryHandler(categoryService)
-         │
-         ▼
-routes.SetupRoutes(r, cfg, categoryService, ...)
-```
+### Carrito en memoria
 
-<a id="flujo-de-datos"></a>
-## Flujo de datos
+- Clave por usuario: `cart:user:<user_id>`.
+- TTL: `24h` (`86400` segundos).
+- TTL se refresca en escrituras del carrito.
+- Si una clave expira, se elimina al leer y tambien por cleanup periodico.
 
-1. **Autenticación**: El cliente se registra o inicia sesión → Recibe token JWT
-2. **Request autenticada**: Cliente envía request con `Authorization: Bearer <token>`
-3. **Middleware**: Valida token y extrae `userID` del contexto
-4. **Handler**: Procesa request, valida datos y llama al service
-5. **Service**: Ejecuta lógica de negocio y llama al repository
-6. **Repository**: Ejecuta operaciones en base de datos con GORM
-7. **Response**: Datos retornados en formato JSON con preloads de relaciones
+### Redis TCP opcional
 
-<a id="diagrama-de-secuencia"></a>
-## Diagrama de secuencia
+Si activas:
 
-```
-Cliente ──────► Router ──────► Middleware ──────► Handler ──────► Service ──────► Repository ──────► Database
-   │              │                │                 │                │                  │                  │
-   │──POST /orders│                │                 │                │                  │                  │
-   │              │                │                 │                │                  │                  │
-   │              │──Validate JWT──│                 │                │                  │                  │
-   │              │                │──userID exists──│                │                  │                  │
-   │              │                │                 │──CreateOrder───│                  │                  │
-   │              │                │                 │                │──CreateOrder─────│                  │
-   │              │                │                 │                │                  │──INSERT ORDER───│
-   │              │                │                 │                │                  │──PRELOAD User───│
-   │              │                │                 │                │──RETURN order────│                  │
-   │              │                │                 │──201 JSON──────│                  │                  │
-   │◄─201 + order─│◄───────────────│◄────────────────│                │                  │                  │
-```
+- `REDIS_TCP_ENABLED=true`
+- `REDIS_TCP_PORT=6379`
+
+la app levanta un servidor TCP RESP en paralelo a la API HTTP.
+
+Comandos soportados:
+
+- `PING`
+- `SET key value [EX seconds]`
+- `GET key`
+- `DEL key`
+
+El servidor RESP usa el mismo `MemoryStore` en RAM que el carrito.
 
 ## Estructura del proyecto
 
-```
+```text
 in-memory-database-engine/
 ├── cmd/
 │   └── api/
-│       └── main.go              # Punto de entrada de la aplicación
+│       └── main.go
 ├── internal/
 │   ├── config/
-│   │   └── config.go           # Carga de variables de entorno
+│   │   └── config.go
 │   ├── database/
-│   │   └── posgresql.go        # Conexión a PostgreSQL y migraciones
+│   │   └── posgresql.go
 │   ├── handler/
-│   │   ├── category.go         # HTTP Handlers para categorías
-│   │   ├── order.go            # HTTP Handlers para órdenes
-│   │   ├── product.go          # HTTP Handlers para productos
-│   │   ├── stockmovement.go    # HTTP Handlers para movimientos de stock
-│   │   └── user.go             # HTTP Handlers para usuarios
+│   │   ├── cart.go
+│   │   ├── category.go
+│   │   ├── order.go
+│   │   ├── product.go
+│   │   ├── stockmovement.go
+│   │   └── user.go
 │   ├── model/
-│   │   ├── base.go             # BaseModel (ID, CreatedAt, UpdatedAt, DeletedAt)
-│   │   ├── category.go         # Entity: Category
-│   │   ├── order.go            # Entities: Order, OrderStatus
-│   │   ├── orderitem.go        # Entity: OrderItem
-│   │   ├── product.go          # Entity: Product
-│   │   ├── stockmovement.go    # Entity: StockMovement
-│   │   └── user.go             # Entity: User
+│   │   ├── base.go
+│   │   ├── cart.go
+│   │   ├── category.go
+│   │   ├── order.go
+│   │   ├── orderitem.go
+│   │   ├── product.go
+│   │   ├── stockmovement.go
+│   │   └── user.go
 │   ├── repository/
-│   │   ├── category.go         # Repository: Category
-│   │   ├── order.go            # Repository: Order
-│   │   ├── product.go          # Repository: Product
-│   │   ├── stockmovement.go    # Repository: StockMovement
-│   │   └── user.go             # Repository: User
+│   │   ├── category.go
+│   │   ├── order.go
+│   │   ├── product.go
+│   │   ├── stockmovement.go
+│   │   └── user.go
 │   ├── routes/
-│   │   └── routes.go           # Configuración de rutas y middlewares
-│   └── service/
-│       ├── category.go         # Service: Category
-│       ├── order.go            # Service: Order
-│       ├── product.go          # Service: Product
-│       ├── stockmovement.go    # Service: StockMovement
-│       └── user.go             # Service: User
+│   │   └── routes.go
+│   ├── server/
+│   │   └── server.go
+│   ├── service/
+│   │   ├── category.go
+│   │   ├── order.go
+│   │   ├── product.go
+│   │   ├── stockmovement.go
+│   │   └── user.go
+│   └── storage/
+│       └── store.go
 ├── pkg/
 │   ├── middleware/
-│   │   └── auth.go             # Middleware de autenticación JWT
+│   │   └── auth.go
 │   ├── response/
-│   │   └── response.go         # Utilidades de respuesta HTTP
+│   │   └── response.go
 │   └── utils/
-│       ├── convert-strings.go  # Conversión de tipos
-│       ├── generate-sku.go     # Generador de SKU único
-│       ├── jwt.go              # Generación y validación de JWT
-│       └── utils.go            # Hash de contraseñas (bcrypt)
-├── .env                         # Variables de entorno
-├── .gitignore                   # Archivos ignorados por Git
-├── go.mod                       # Módulos y dependencias de Go
-├── go.sum                       # Checksums de dependencias
-├── run.ps1                      # Script de ejecución (PowerShell)
-└── README.md                    # Esta documentación
+├── .env.template
+├── go.mod
+├── go.sum
+└── README.md
 ```
 
-<a id="-modelos-de-datos"></a>
-## 📦 Modelos de datos
+## Modelos de datos
 
-### BaseModel (Herencia automática)
+### Persistidos en PostgreSQL
 
-Todos los modelos extienden de `BaseModel`:
+- `User`
+- `Category`
+- `Product` (incluye `stock`)
+- `Order`
+- `OrderItem`
+- `StockMovement` (`Reason`: `SALE`, `RESTOCK`, `ADJUSTMENT`)
 
-```go
-type BaseModel struct {
-    ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-    CreatedAt time.Time      `json:"created_at"`
-    UpdatedAt time.Time      `json:"updated_at"`
-    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-}
-```
+### En memoria (no persistido en DB)
 
-### Entidades principales
+- `Cart`
+- `CartItem`
 
-| Modelo | Descripción | Campos principales |
-|--------|-------------|-------------------|
-| **User** | Usuario del sistema | email, password (bcrypt), first_name, last_name |
-| **Category** | Categoría de productos | name (unique) |
-| **Product** | Producto del inventario | name, sku (unique), price, stock, category_id |
-| **Order** | Orden de compra | user_id, total_amount, status (PENDING/PAID/SHIPPED/CANCELLED) |
-| **OrderItem** | Item de una orden | order_id, product_id, quantity, price_at_moment |
-| **StockMovement** | Movimiento de stock | product_id, quantity, reason (SALE/RESTOCK/ADJUSTMENT) |
+## Catalogo de endpoints
 
-<a id="relaciones-entre-entidades"></a>
-## Relaciones entre entidades
+Base URL local: `http://localhost:8080`
 
-```
-User (1) ─────< (N) Order (1) ─────< (N) OrderItem (N) >───── (1) Product
- │                                                                   │
- │                                                                   │
- └───────────────────── (N) >───── (1) Category <───────────────────┘
-                                                          │
-                                                          │
-                                                          ▼
-                                                 StockMovement (N)
-```
+### Health
 
-**Detalles de relaciones:**
+- `GET /health` (requiere JWT en el estado actual)
 
-- **User → Order**: Un usuario puede tener múltiples órdenes
-- **Order → OrderItem**: Una orden contiene múltiples items
-- **OrderItem → Product**: Un item pertenece a un producto (snapshot del precio)
-- **Product → Category**: Un producto pertenece a una categoría (opcional)
-- **Product → StockMovement**: Un producto tiene múltiples movimientos de stock
+### Usuarios
 
-<a id="️-catálogo-de-endpoints"></a>
-## 🛠️ Catálogo de endpoints
+- `POST /users/register`
+- `POST /users/login`
+- `DELETE /users/:email` (auth)
 
-<a id="-autenticación"></a>
-### 🔐 Autenticación
+### Categorias
 
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/users/register` | Registrar nuevo usuario | ❌ |
-| `POST` | `/users/login` | Iniciar sesión (devuelve JWT) | ❌ |
-| `DELETE` | `/users/:email` | Eliminar usuario | ✅ |
+- `GET /categories`
+- `GET /categories/:id`
+- `POST /categories`
+- `PATCH /categories/:id`
+- `DELETE /categories/:id`
 
-**Request - Register:**
-```json
-POST /users/register
-{
-  "email": "usuario@ejemplo.com",
-  "password": "password123",
-  "first_name": "Juan",
-  "last_name": "Pérez"
-}
-```
+### Productos
 
-**Response - Login:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "message": "Login exitoso"
-}
-```
+- `GET /products`
+- `GET /products/:id`
+- `POST /products`
+- `PATCH /products/:id`
+- `DELETE /products/:id`
 
-<a id="-categorías"></a>
-### 📦 Categorías
+### Ordenes (auth)
 
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/categories` | Listar todas las categorías | ❌ |
-| `GET` | `/categories/:id` | Obtener categoría por ID | ❌ |
-| `POST` | `/categories` | Crear nueva categoría | ❌ |
-| `PATCH` | `/categories/:id` | Actualizar categoría | ❌ |
-| `DELETE` | `/categories/:id` | Eliminar categoría | ❌ |
+- `GET /orders` (solo ordenes del usuario autenticado)
+- `GET /orders/:id` (solo si es owner)
+- `POST /orders`
+- `POST /orders/:id/pay` (solo si es owner, con control de stock)
+- `PATCH /orders/:id` (solo si es owner)
 
-<a id="-productos"></a>
-### 🎯 Productos
+### Carrito (auth)
 
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/products` | Listar todos los productos | ❌ |
-| `GET` | `/products/:id` | Obtener producto por ID | ❌ |
-| `POST` | `/products` | Crear nuevo producto | ❌ |
-| `PATCH` | `/products/:id` | Actualizar producto | ❌ |
-| `DELETE` | `/products/:id` | Eliminar producto | ❌ |
+- `POST /cart/items`
+- `PATCH /cart/items/:product_id`
+- `DELETE /cart/items/:product_id`
+- `GET /cart`
+- `DELETE /cart`
+- `POST /cart/checkout`
 
-<a id="-órdenes"></a>
-### 🛒 Órdenes
-
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/orders` | Listar todas las órdenes | ✅ |
-| `GET` | `/orders/:id` | Obtener orden por ID | ✅ |
-| `POST` | `/orders` | Crear nueva orden | ✅ |
-| `PATCH` | `/orders/:id` | Actualizar orden | ✅ |
-| `DELETE` | `/orders/:id` | Eliminar orden | ✅ |
-
-**Request - Create Order:**
-```json
-POST /orders
-Authorization: Bearer <token_jwt>
-
-{
-  "total_amount": 150.00,
-  "items": [
-    {
-      "product_id": "uuid-producto-1",
-      "quantity": 2,
-      "price_at_moment": 50.00
-    },
-    {
-      "product_id": "uuid-producto-2",
-      "quantity": 1,
-      "price_at_moment": 50.00
-    }
-  ]
-}
-```
-
-**Nota:** El `user_id` se obtiene automáticamente del token JWT, no debe enviarse en el body.
-
-**Response - Create Order:**
-```json
-{
-  "id": "4d21d1e1-fc65-4529-90b4-0ab75ea10e6d",
-  "created_at": "2026-02-15T14:44:24.744776-03:00",
-  "updated_at": "2026-02-15T14:44:24.744776-03:00",
-  "user_id": "29724283-95ed-49cc-a119-5944cbb96d01",
-  "user": {
-    "id": "29724283-95ed-49cc-a119-5944cbb96d01",
-    "email": "usuario@ejemplo.com",
-    "first_name": "Juan",
-    "last_name": "Pérez"
-  },
-  "total_amount": 150.00,
-  "status": "PENDING",
-  "items": [
-    {
-      "id": "...",
-      "product_id": "uuid-producto-1",
-      "quantity": 2,
-      "price_at_moment": 50.00,
-      "product": {
-        "id": "uuid-producto-1",
-        "name": "Laptop Gaming",
-        "sku": "LP-GAMING-001",
-        "price": 1200.00,
-        "stock": 10
-      }
-    }
-  ]
-}
-```
-
-<a id="-guía-de-instalación-y-ejecución"></a>
-## 🚀 Guía de instalación y ejecución
+## Guia de instalacion y ejecucion
 
 ### Prerrequisitos
 
-- **Go** 1.25+ ([Instalar Go](https://golang.org/dl/))
-- **PostgreSQL** 14+ o base de datos en la nube (Neon, Supabase, etc.)
-- **Git** para clonar el repositorio
+- Go 1.25+
+- PostgreSQL (local o cloud)
+- Git
 
-### 1. Clonar el repositorio
+### 1) Clonar repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/in-memory-database-engine.git
+git clone <tu-repo-url>
 cd in-memory-database-engine
 ```
 
-### 2. Instalar dependencias
+### 2) Instalar dependencias
 
 ```bash
 go mod download
 ```
 
-### 3. Configurar variables de entorno
-
-Copiar el template de configuración y completar los valores:
+### 3) Configurar entorno
 
 ```bash
-# Copiar el template
 cp .env.template .env
-
-# Editar el archivo .env con tus valores reales
-# Reemplaza: <tu_url_de_postgresql_aqui> y <cambia_esto_por_una_clave_secreta_muy_segura>
 ```
 
-**Variables requeridas en `.env`:**
+Completa `.env`:
 
 ```env
-DATABASE_URL=<tu_url_de_postgresql_aqui>
+DATABASE_URL=postgresql://...
 PORT=8080
 ENV=development
-JWT_SECRET=<cambia_esto_por_una_clave_secreta_muy_segura>
+JWT_SECRET=tu_clave_secreta
+REDIS_TCP_ENABLED=false
+REDIS_TCP_PORT=6379
 ```
 
-### 4. Ejecutar la aplicación
-
-#### Opción A: Con `go run` (recomendado para desarrollo)
+### 4) Ejecutar API
 
 ```bash
 go run cmd/api/main.go
 ```
 
-#### Opción B: Script PowerShell (evita bloqueo de Windows Defender)
+Opcional en Windows:
 
 ```powershell
 .\run.ps1
 ```
 
-#### Opción C: Compilar y ejecutar
+### 5) (Opcional) Activar Redis TCP
 
-```bash
-go build -o api.exe cmd/api/main.go
-.\api.exe
+Setea en `.env`:
+
+```env
+REDIS_TCP_ENABLED=true
+REDIS_TCP_PORT=6379
 ```
 
-### 5. Verificar que funciona
+y vuelve a ejecutar la app.
+
+## Guia de pruebas paso a paso con cURL
+
+### Paso 0: definir base
 
 ```bash
-curl http://localhost:8080/health
+BASE=http://localhost:8080
 ```
 
-**Respuesta esperada:**
+### Paso 1: registrar usuario
+
+```bash
+curl -X POST $BASE/users/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email":"cart.test@example.com",
+    "password":"password123",
+    "first_name":"Cart",
+    "last_name":"Tester"
+  }'
+```
+
+### Paso 2: login y guardar token
+
+```bash
+curl -X POST $BASE/users/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email":"cart.test@example.com",
+    "password":"password123"
+  }'
+```
+
+Guarda `token` de la respuesta en `TOKEN`.
+
+### Paso 3: crear producto
+
+```bash
+curl -X POST $BASE/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Mouse Gamer",
+    "description":"RGB",
+    "price":99.9,
+    "stock":5
+  }'
+```
+
+Guarda `id` del producto en `PRODUCT_ID`.
+
+### Paso 4: agregar item al carrito
+
+```bash
+curl -X POST $BASE/cart/items \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"product_id\":\"$PRODUCT_ID\",
+    \"quantity\":2
+  }"
+```
+
+### Paso 5: actualizar cantidad del item
+
+```bash
+curl -X PATCH $BASE/cart/items/$PRODUCT_ID \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"quantity":3}'
+```
+
+### Paso 6: ver carrito
+
+```bash
+curl $BASE/cart \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Paso 7: checkout (crea orden + intenta pagar)
+
+```bash
+curl -X POST $BASE/cart/checkout \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Ejemplo de exito:
+
 ```json
 {
-  "status": "ok",
-  "message": "Server is running",
-  "environment": "development",
-  "port": "8080"
+  "status": "success",
+  "order_id": "uuid",
+  "order_status": "PAID",
+  "message": "Checkout completado y orden pagada",
+  "order": { "...": "..." }
 }
 ```
 
-<a id="-guía-de-pruebas-con-curl"></a>
-## 🧪 Guía de pruebas con cURL
+Ejemplo de fallo por stock:
 
-### 1. Registrar un usuario
-
-```bash
-curl -X POST http://localhost:8080/users/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123",
-    "first_name": "Test",
-    "last_name": "User"
-  }'
+```json
+{
+  "status": "failed",
+  "order_id": "uuid",
+  "order_status": "CANCELLED",
+  "error": "Stock insuficiente para completar el checkout"
+}
 ```
 
-### 2. Iniciar sesión (obtener token)
+### Paso 8: listar ordenes del usuario
 
 ```bash
-curl -X POST http://localhost:8080/users/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
+curl $BASE/orders \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**Guardar el token** de la respuesta para los siguientes pasos.
-
-### 3. Crear una categoría
+### Paso 9: pago manual de una orden puntual
 
 ```bash
-curl -X POST http://localhost:8080/categories \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Electrónica"
-  }'
+curl -X POST $BASE/orders/<ORDER_ID>/pay \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-### 4. Crear un producto
+### Paso 10: remover item del carrito
 
 ```bash
-curl -X POST http://localhost:8080/products \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Laptop Gaming",
-    "sku": "LP-GAMING-001",
-    "description": "Laptop de alto rendimiento",
-    "price": 1200.00,
-    "stock": 10,
-    "category_id": "uuid-de-la-categoria"
-  }'
+curl -X DELETE $BASE/cart/items/$PRODUCT_ID \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-### 5. Crear una orden (requiere token)
+### Paso 11: limpiar carrito completo
 
 ```bash
-curl -X POST http://localhost:8080/orders \
-  -H "Authorization: Bearer TU_TOKEN_AQUI" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "total_amount": 2400.00,
-    "items": [
-      {
-        "product_id": "uuid-del-producto",
-        "quantity": 2,
-        "price_at_moment": 1200.00
-      }
-    ]
-  }'
+curl -X DELETE $BASE/cart \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-### 6. Listar todas las órdenes
+### Paso 12: probar Redis TCP (opcional)
+
+Con app corriendo y `REDIS_TCP_ENABLED=true`:
 
 ```bash
-curl http://localhost:8080/orders \
-  -H "Authorization: Bearer TU_TOKEN_AQUI"
+redis-cli -p 6379 PING
+redis-cli -p 6379 SET demo hola EX 30
+redis-cli -p 6379 GET demo
+redis-cli -p 6379 DEL demo
 ```
 
-<a id="-variables-de-entorno"></a>
-## 🔒 Variables de entorno
+## Variables de entorno
 
-| Variable | Descripción | Requerido | Default |
-|----------|-------------|-----------|---------|
-| `DATABASE_URL` | URL de conexión a PostgreSQL | ✅ | - |
-| `PORT` | Puerto donde escucha el servidor | ❌ | `8080` |
-| `ENV` | Entorno (development/production) | ❌ | `development` |
-| `JWT_SECRET` | Clave secreta para firmar tokens JWT | ❌ | `sd,fsdnlfksdmlkf` |
+| Variable | Descripcion | Requerido | Default |
+|---|---|---|---|
+| `DATABASE_URL` | DSN de PostgreSQL | Si | - |
+| `PORT` | Puerto HTTP | No | `8080` |
+| `ENV` | Entorno (`development`/`production`) | No | `development` |
+| `JWT_SECRET` | Secreto JWT | No | `sd,fsdnlfksdmlkf` |
+| `REDIS_TCP_ENABLED` | Habilita servidor RESP TCP | No | `false` |
+| `REDIS_TCP_PORT` | Puerto TCP RESP | No | `6379` |
 
-**Ejemplo de `.env`:**
-
-```env
-# Base de datos PostgreSQL (Neon, Supabase, etc.)
-DATABASE_URL=postgresql://neondb_owner:password@ep-host.aws.neon.tech/neondb?sslmode=require
-
-# Configuración del servidor
-PORT=8080
-ENV=development
-
-# Seguridad JWT
-JWT_SECRET=mi_clave_muy_segura_cambiar_en_produccion
-```
-
-<a id="-scripts-y-comandos"></a>
-## 🛠️ Scripts y comandos
-
-### Comandos básicos de Go
+## Scripts y comandos
 
 ```bash
-# Ejecutar la aplicación
+# ejecutar app
 go run cmd/api/main.go
 
-# Compilar binario
+# compilar
 go build -o api.exe cmd/api/main.go
 
-# Descargar dependencias
+# dependencias
 go mod download
-
-# Actualizar dependencias
 go mod tidy
 
-# Ejecutar tests (cuando estén implementados)
+# tests
 go test ./...
 
-# Formatear código
-go fmt ./...
-
-# Verificar código
+# analisis estatico
 go vet ./...
-```
-
-### Script PowerShell (Windows)
-
-El archivo `run.ps1` evita el bloqueo de Windows Defender:
-
-```powershell
-# Establece directorio de compilación temporal
-$env:GOTMPDIR = "$PWD\.go-build"
-
-# Ejecuta la aplicación
-go run cmd/api/main.go
 ```
 
 ## Contribuciones
 
-¡Las contribuciones son bienvenidas! Seguí estos pasos:
+Contribuciones bienvenidas.
 
-1. Hacé un fork del repositorio.
-2. Creá una rama para tu feature o fix (`git checkout -b feature/nueva-funcionalidad`).
-3. Realizá tus cambios y escribí pruebas si es necesario.
-4. Hacé commit y push a tu rama.
-5. Abrí un Pull Request describiendo tus cambios.
+Recomendado:
 
-### Convenciones de Commits
-
-Este proyecto sigue [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` Nueva funcionalidad
-- `fix:` Corrección de bugs
-- `docs:` Cambios en documentación
-- `style:` Cambios de formato (no afectan la lógica)
-- `refactor:` Refactorización de código
-- `test:` Añadir o modificar tests
-- `chore:` Tareas de mantenimiento
+1. Fork del repositorio.
+2. Rama por feature/fix.
+3. Cambios + pruebas.
+4. Pull Request con descripcion tecnica clara.
 
 ## Licencia
 
-Este proyecto está bajo la licencia **MIT**.
+MIT.
 
----
+## Contacto
 
-<a id="-contacto"></a>
-## 📬 Contacto
-
-- **Autor:** Lucas
-- **Email:** lucassimple@hotmail.com
-- **LinkedIn:** [Lucas Gastón Cabral](https://www.linkedin.com/in/lucas-gastón-cabral/)
-- **Portfolio:** [Ver Portfolio](https://portfolio-web-dev-git-main-lucascabral95s-projects.vercel.app/)
-- **GitHub:** [@Lucascabral95](https://github.com/Lucascabral95)
-
----
-
-<p align="center">
-  <img src="https://go.dev/blog/go-brand/Go-Logo/PNG/Go-Logo_Aqua.png" width="40"/>
-  <br>
-  Desarrollado con <span style="color: #e74c3c;">❤️</span> usando Go, Gin y GORM
-</p>
+- Autor: Lucas
+- Email: lucassimple@hotmail.com
+- LinkedIn: https://www.linkedin.com/in/lucas-gaston-cabral/
+- GitHub: https://github.com/Lucascabral95

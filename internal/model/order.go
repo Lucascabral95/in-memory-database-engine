@@ -20,3 +20,7 @@ const (
 	OrderStatusShipped   OrderStatus = "SHIPPED"
 	OrderStatusCancelled OrderStatus = "CANCELLED"
 )
+
+type UpdateOrderStatusRequest struct {
+	Status OrderStatus `json:"status" binding:"required,oneof=PENDING PAID SHIPPED CANCELLED"`
+}

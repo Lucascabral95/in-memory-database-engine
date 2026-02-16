@@ -1,39 +1,35 @@
 FROM golang:1.25-alpine AS builder
 
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata
 
-WORKDIR /app
+WORKDIR /src
 
 COPY go.mod go.sum ./
-
 RUN go mod download
 
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath \
     -ldflags="-w -s" \
-    -o bin/api \
-    cmd/api/main.go
+    -o /out/api \
+    ./cmd/api/main.go
 
-FROM alpine:3.19
+FROM alpine:3.20
 
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata
 
-RUN addgroup -g 1000 appgroup && \
-    adduser -D -u 1000 -G appgroup appuser
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
-
-COPY --from=builder /app/bin/api .
-
-
-RUN chown -R appuser:appgroup /app
+COPY --from=builder /out/api /app/api
 
 USER appuser
 
-EXPOSE 8080
+EXPOSE 8080 6379
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+# /health requiere JWT en esta app; se usa un endpoint publico para el check.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -q --spider http://localhost:8080/products || exit 1
 
-CMD ["./api"]
+ENTRYPOINT ["/app/api"]
