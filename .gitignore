@@ -76,3 +76,17 @@ __debug_bin
 # Air live reload tool
 tmp/
 .air.toml 
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+infra/terraform/terraform.tfvars

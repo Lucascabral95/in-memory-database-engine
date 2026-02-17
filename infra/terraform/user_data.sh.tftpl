@@ -1,0 +1,69 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf update -y
+dnf install -y docker awscli jq
+
+systemctl enable docker
+systemctl start docker
+
+mkdir -p /opt/in-memory-db
+
+cat > /usr/local/bin/fetch-env.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+
+REGION="${aws_region}"
+PREFIX="${ssm_parameter_prefix}"
+OUT_FILE="/opt/in-memory-db/.env"
+
+get_param() {
+  aws ssm get-parameter \
+    --name "$1" \
+    --with-decryption \
+    --region "$REGION" \
+    --query 'Parameter.Value' \
+    --output text
+}
+
+cat > "$OUT_FILE" <<EOT
+DATABASE_URL=$(get_param "${ssm_parameter_prefix}/DATABASE_URL")
+PORT=$(get_param "${ssm_parameter_prefix}/PORT")
+ENV=$(get_param "${ssm_parameter_prefix}/ENV")
+JWT_SECRET=$(get_param "${ssm_parameter_prefix}/JWT_SECRET")
+REDIS_TCP_ENABLED=$(get_param "${ssm_parameter_prefix}/REDIS_TCP_ENABLED")
+REDIS_TCP_PORT=$(get_param "${ssm_parameter_prefix}/REDIS_TCP_PORT")
+EOT
+
+chmod 600 "$OUT_FILE"
+EOF
+
+chmod +x /usr/local/bin/fetch-env.sh
+
+cat > /etc/systemd/system/in-memory-db.service <<EOF
+[Unit]
+Description=In Memory DB API Docker Service
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+
+ExecStartPre=/usr/local/bin/fetch-env.sh
+ExecStartPre=/bin/bash -c '/usr/bin/aws ecr get-login-password --region ${aws_region} | /usr/bin/docker login --username AWS --password-stdin ${ecr_registry}'
+ExecStartPre=-/usr/bin/docker rm -f ${container_name}
+ExecStartPre=/usr/bin/docker pull ${ecr_repository_url}:latest
+ExecStart=/usr/bin/docker run --name ${container_name} --env-file /opt/in-memory-db/.env -p ${app_port}:${app_port} -p ${redis_port}:${redis_port} --restart unless-stopped ${ecr_repository_url}:latest
+ExecStop=/usr/bin/docker stop ${container_name}
+ExecStopPost=-/usr/bin/docker rm -f ${container_name}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable in-memory-db
+systemctl start in-memory-db

@@ -8,21 +8,27 @@
     "test": "go test ./...",
     "seed": "go run cmd/seed/main.go --force",
     "seed:safe": "go run cmd/seed/main.go",
-    "docker:up": "docker compose up -d",
     "swagger:init": "go run github.com/swaggo/swag/cmd/swag@v1.8.12 init -g cmd/api/main.go -o docs",
-
+    "infra:init": "terraform -chdir=infra/terraform init",
+    "infra:fmt": "terraform -chdir=infra/terraform fmt -recursive",
+    "infra:validate": "terraform -chdir=infra/terraform validate",
+    "infra:plan": "terraform -chdir=infra/terraform plan",
+    "infra:apply": "terraform -chdir=infra/terraform apply -auto-approve",
+    "infra:destroy": "terraform -chdir=infra/terraform destroy -auto-approve",
+    
     "docker:up:build": "docker compose up -d --build",
+    "docker:image:build": "docker build -t in-memory-db-api:latest .",
+    "docker:up": "docker compose up -d",
     "docker:logs": "docker compose logs -f --tail=200 api",
     "docker:down": "docker compose down --remove-orphans",
     "docker:image:build:push": "npm run docker:image:build && npm run docker:image:tag && npm run docker:image:push",
-    
+    "docker:image:tag": "docker tag in-memory-db-api:latest lucascabral95/in-memory-database-engine:latest",
+    "docker:image:push": "docker push lucascabral95/in-memory-database-engine:latest",    
+
     "docker:ps": "docker compose ps",
     "docker:restart": "docker compose restart api",
     "docker:exec": "docker compose exec api sh",
     "docker:build": "docker compose build api",
-    "docker:image:build": "docker build -t in-memory-db-api:latest .",
-    "docker:image:tag": "docker tag in-memory-db-api:latest lucascabral95/in-memory-database-engine:latest",
-    "docker:image:push": "docker push lucascabral95/in-memory-database-engine:latest",
     "build": "go build -o bin/api.exe cmd/api/main.go",
     "build:linux": "set GOOS=linux&& set GOARCH=amd64&& go build -o bin/api-linux cmd/api/main.go",
     "deps": "go mod download",
@@ -34,7 +40,7 @@
     "test:verbose": "go test -v ./...",
     "swagger:refresh": "npm run swagger:init",
     "start": "npm run build && .\\bin\\api.exe",
-    "help": "echo 'Scripts: dev, seed, swagger:init, docker:up, docker:up:build, docker:build, docker:image:build:push, test'"
+    "help": "echo 'Scripts: dev, seed, swagger:init, infra:init, infra:plan, infra:apply, docker:up, docker:up:build, docker:build, docker:image:build:push, test'"
   },
   "keywords": [
     "go",
