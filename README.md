@@ -6,6 +6,7 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 
 - [Descripcion general](#descripcion-general)
 - [Caracteristicas principales](#caracteristicas-principales)
+- [Tecnologias utilizadas](#tecnologias-utilizadas)
 - [Arquitectura del sistema](#arquitectura-del-sistema)
 - [Flujo de checkout y pago con control de stock](#flujo-de-checkout-y-pago-con-control-de-stock)
 - [Carrito en memoria (24h) y Redis TCP opcional](#carrito-en-memoria-24h-y-redis-tcp-opcional)
@@ -13,9 +14,12 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 - [Modelos de datos](#modelos-de-datos)
 - [Catalogo de endpoints](#catalogo-de-endpoints)
 - [Guia de instalacion y ejecucion](#guia-de-instalacion-y-ejecucion)
+- [Guia Docker (build y run)](#guia-docker-build-y-run)
 - [Guia de pruebas paso a paso con cURL](#guia-de-pruebas-paso-a-paso-con-curl)
+- [CI: testing y build Docker](#ci-testing-y-build-docker)
 - [Variables de entorno](#variables-de-entorno)
 - [Scripts y comandos](#scripts-y-comandos)
+- [Convenciones de Commits](#convenciones-de-commits)
 - [Contribuciones](#contribuciones)
 - [Licencia](#licencia)
 - [Contacto](#contacto)
@@ -43,6 +47,17 @@ La aplicacion sigue el patron `Handler -> Service -> Repository -> Database`.
 - Endpoints de carrito para agregar, actualizar, remover items, limpiar carrito y checkout.
 - Ownership enforcement en ordenes: cada usuario solo puede ver/modificar/pagar sus ordenes.
 - Redis TCP opcional compartiendo el mismo `MemoryStore`.
+
+## 🛠️ Tecnologias utilizadas
+
+- Go (Golang)
+- Gin (HTTP framework)
+- GORM (ORM)
+- PostgreSQL
+- JWT (autenticacion)
+- Docker y Docker Compose
+- GitHub Actions (CI)
+- Redis protocol (RESP) server custom en TCP
 
 ## Arquitectura del sistema
 
@@ -281,6 +296,61 @@ REDIS_TCP_PORT=6379
 
 y vuelve a ejecutar la app.
 
+## 🐳 Guia Docker (build y run)
+
+### Opcion A: Docker Compose (recomendado)
+
+1. Configura variables:
+
+```bash
+cp .env.template .env
+```
+
+2. Levanta servicios:
+
+```bash
+docker compose up --build
+```
+
+3. Verifica que la API responde:
+
+```bash
+curl http://localhost:8080/health
+```
+
+4. Detener servicios:
+
+```bash
+docker compose down
+```
+
+### Opcion B: Dockerfile (solo API)
+
+1. Construir imagen:
+
+```bash
+docker build -t in-memory-db-api:latest .
+```
+
+2. Ejecutar contenedor:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e DATABASE_URL="postgresql://usuario:password@host:5432/dbname?sslmode=disable" \
+  -e PORT="8080" \
+  -e ENV="production" \
+  -e JWT_SECRET="tu_jwt_secret" \
+  -e REDIS_TCP_ENABLED="false" \
+  -e REDIS_TCP_PORT="6379" \
+  in-memory-db-api:latest
+```
+
+3. Probar endpoint:
+
+```bash
+curl http://localhost:8080/health
+```
+
 ## Guia de pruebas paso a paso con cURL
 
 ### Paso 0: definir base
@@ -427,7 +497,54 @@ redis-cli -p 6379 GET demo
 redis-cli -p 6379 DEL demo
 ```
 
-## Variables de entorno
+## 🚦 CI: testing y build Docker
+
+El workflow de CI esta en `.github/workflows/ci.yml` y ejecuta tres checks:
+
+1. `CI / Go Build & Test`
+2. `CI / Docker Image Build`
+3. `CI / Required Checks`
+
+### Que valida el CI
+
+- Descarga dependencias (`go mod download`).
+- Verifica `go.mod`/`go.sum` limpios (`go mod tidy` + diff).
+- Ejecuta analisis estatico (`go vet ./...`).
+- Ejecuta tests (`go test ./...` con cobertura).
+- Compila la API (`go build ./cmd/api/main.go`).
+- Construye imagen Docker (`docker build -f Dockerfile .`).
+
+### Variables de entorno en GitHub Actions
+
+El pipeline lee secretos del repositorio:
+
+- `DATABASE_URL`
+- `PORT`
+- `ENV`
+- `JWT_SECRET`
+- `REDIS_TCP_ENABLED`
+- `REDIS_TCP_PORT`
+
+### Reproducir validacion en local
+
+```bash
+go mod download
+go mod tidy
+go vet ./...
+go test ./... -v -covermode=atomic -coverprofile=coverage.out
+go build -o bin/api-ci ./cmd/api/main.go
+docker build --file Dockerfile --tag in-memory-db-api:ci .
+```
+
+### Bloquear merge si falla CI
+
+Configura en GitHub (`Settings -> Branches` o `Rulesets`) para `main`:
+
+- Activar `Require status checks to pass before merging`.
+- Agregar como requerido: `CI / Required Checks`.
+- Si no quieres aprobacion manual, dejar `Required approvals = 0`.
+
+## ⚙️ Variables de entorno
 
 | Variable | Descripcion | Requerido | Default |
 |---|---|---|---|
@@ -438,7 +555,7 @@ redis-cli -p 6379 DEL demo
 | `REDIS_TCP_ENABLED` | Habilita servidor RESP TCP | No | `false` |
 | `REDIS_TCP_PORT` | Puerto TCP RESP | No | `6379` |
 
-## Scripts y comandos
+## 🧪 Scripts y comandos
 
 ```bash
 # ejecutar app
@@ -453,6 +570,10 @@ go mod tidy
 
 # tests
 go test ./...
+
+# seed de datos
+go run cmd/seed/main.go
+go run cmd/seed/main.go --force
 
 # analisis estatico
 go vet ./...
@@ -469,13 +590,37 @@ Recomendado:
 3. Cambios + pruebas.
 4. Pull Request con descripcion tecnica clara.
 
+### Convenciones de Commits
+
+Este proyecto sigue [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` Nueva funcionalidad
+- `fix:` Correccion de bugs
+- `docs:` Cambios en documentacion
+- `style:` Cambios de formato (no afectan la logica)
+- `refactor:` Refactorizacion de codigo
+- `test:` Anadir o modificar tests
+- `chore:` Tareas de mantenimiento
+
+---
+
 ## Licencia
 
-MIT.
+Este proyecto esta bajo la licencia **MIT**.
 
-## Contacto
+---
 
-- Autor: Lucas
-- Email: lucassimple@hotmail.com
-- LinkedIn: https://www.linkedin.com/in/lucas-gaston-cabral/
-- GitHub: https://github.com/Lucascabral95
+<a id="contact-anchor"></a>
+## 📬 Contacto
+
+- **Autor:** Lucas Cabral
+- **Email:** lucassimple@hotmail.com
+- **LinkedIn:** [https://www.linkedin.com/in/lucas-gastón-cabral/](https://www.linkedin.com/in/lucas-gastón-cabral/)
+- **Portfolio:** [https://portfolio-web-dev-git-main-lucascabral95s-projects.vercel.app/](https://portfolio-web-dev-git-main-lucascabral95s-projects.vercel.app/)
+- **Github:** [https://github.com/Lucascabral95](https://github.com/Lucascabral95/)
+
+---
+
+<p align="center">
+  Desarrollado con ❤️ por Lucas Cabral
+</p>

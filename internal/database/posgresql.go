@@ -38,6 +38,7 @@ func runMigrations(db *gorm.DB) error {
 
 	return db.AutoMigrate(
 		&model.User{},
+		&model.Category{},
 		&model.Product{},
 		&model.Order{},
 		&model.OrderItem{},

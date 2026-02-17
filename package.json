@@ -5,6 +5,8 @@
   "main": "cmd/api/main.go",
   "scripts": {
     "dev": "go run cmd/api/main.go",  
+    "seed": "go run cmd/seed/main.go --force",
+    "seed:safe": "go run cmd/seed/main.go",
     "docker:up": "docker compose up -d",
 
     "docker:up:build": "docker compose up -d --build",
