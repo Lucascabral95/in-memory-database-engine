@@ -16,6 +16,8 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 - [Guia de instalacion y ejecucion](#guia-de-instalacion-y-ejecucion)
 - [Guia Docker (build y run)](#guia-docker-build-y-run)
 - [Guia de pruebas paso a paso con cURL](#guia-de-pruebas-paso-a-paso-con-curl)
+- [Documentacion Swagger](#documentacion-swagger)
+- [Coleccion Postman](#coleccion-postman)
 - [CI: testing y build Docker](#ci-testing-y-build-docker)
 - [Variables de entorno](#variables-de-entorno)
 - [Scripts y comandos](#scripts-y-comandos)
@@ -497,6 +499,43 @@ redis-cli -p 6379 GET demo
 redis-cli -p 6379 DEL demo
 ```
 
+## Documentacion Swagger
+
+La API incluye documentacion OpenAPI/Swagger para todos los handlers.
+
+### Generar documentacion
+
+```bash
+npm run swagger:init
+```
+
+### Levantar la API
+
+```bash
+npm run dev
+```
+
+### Abrir Swagger UI
+
+```text
+http://localhost:8080/swagger/index.html
+```
+
+### Notas importantes
+
+- El endpoint del JSON es `GET /swagger/doc.json`.
+- Si actualizas anotaciones `@Summary`, `@Router`, `@Tags`, vuelve a ejecutar `npm run swagger:init`.
+- El proyecto usa una version fija del generador para evitar incompatibilidades.
+
+## Coleccion Postman
+
+Tambien se incluye una coleccion Postman lista para probar rutas de la API.
+
+- Archivo: `postman/In Memory Database Engine.postman_collection.json`
+- Importar ese JSON en Postman (`Import -> File`).
+- Configurar variable base URL en Postman como `http://localhost:8080`.
+- Ejecutar login y reutilizar el token Bearer para endpoints protegidos.
+
 ## 🚦 CI: testing y build Docker
 
 El workflow de CI esta en `.github/workflows/ci.yml` y ejecuta tres checks:
@@ -570,6 +609,9 @@ go mod tidy
 
 # tests
 go test ./...
+
+# swagger
+npm run swagger:init
 
 # seed de datos
 go run cmd/seed/main.go

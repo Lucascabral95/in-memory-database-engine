@@ -4,10 +4,12 @@
   "description": "API REST para gestión de inventario y órdenes de e-commerce con Go, Gin y GORM",
   "main": "cmd/api/main.go",
   "scripts": {
-    "dev": "go run cmd/api/main.go",  
+    "dev": "npm run build && .\\bin\\api.exe",
+    "test": "go test ./...",
     "seed": "go run cmd/seed/main.go --force",
     "seed:safe": "go run cmd/seed/main.go",
     "docker:up": "docker compose up -d",
+    "swagger:init": "go run github.com/swaggo/swag/cmd/swag@v1.8.12 init -g cmd/api/main.go -o docs",
 
     "docker:up:build": "docker compose up -d --build",
     "docker:logs": "docker compose logs -f --tail=200 api",
@@ -28,11 +30,11 @@
     "deps:update": "go get -u ./...",
     "fmt": "go fmt ./...",
     "vet": "go vet ./...",
-    "test": "go test ./...",
     "test:coverage": "go test -cover ./...",
     "test:verbose": "go test -v ./...",
-    "start": "go run cmd/api/main.go",
-    "help": "echo 'Scripts: dev, docker:up, docker:up:build, docker:build, docker:image:build:push, test'"
+    "swagger:refresh": "npm run swagger:init",
+    "start": "npm run build && .\\bin\\api.exe",
+    "help": "echo 'Scripts: dev, seed, swagger:init, docker:up, docker:up:build, docker:build, docker:image:build:push, test'"
   },
   "keywords": [
     "go",

@@ -1,0 +1,847 @@
+{
+  "info": {
+    "_postman_id": "1798dd4f-3e54-420f-8cc8-21bd349cd96a",
+    "name": "In Memory Database Engine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "40820268"
+  },
+  "item": [
+    {
+      "name": "health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjI5NzI0MjgzLTk1ZWQtNDljYy1hMTE5LTU5NDRjYmI5NmQwMSIsImVtYWlsIjoidGVzdEBob3RtYWlsLmNvbSIsImZpcnN0X25hbWUiOiJMdWNhcyIsImxhc3RfbmFtZSI6IkNhYnJhbCIsImV4cCI6MTc3Mzc4NTg3OCwiaWF0IjoxNzcxMTkzODc4fQ.Oe1L5NDfMpx5-SiQlQhlIOe9NJdJfWqMG9vthovJl4U",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "localhost:8080/health",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener todas las categorias",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/categories",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener categoria por id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/categories/4caa48dd-7ff6-4d6e-9ab9-27e3e650884b",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "categories",
+            "4caa48dd-7ff6-4d6e-9ab9-27e3e650884b"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear categoria",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Sports 4\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/categories",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar categoria por id",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Ex Sports  444444\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/categories/4caa48dd-7ff6-4d6e-9ab9-27e3e650884b",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "categories",
+            "4caa48dd-7ff6-4d6e-9ab9-27e3e650884b"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar categoria por id",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Sports\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/categories/4caa48dd-7ff6-4d6e-9ab9-27e3e650884b",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "categories",
+            "4caa48dd-7ff6-4d6e-9ab9-27e3e650884b"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Registro de usuario",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"test@hotmail.com\",\r\n    \"password\": \"12345678\",\r\n    \"first_name\": \"Lucas\",\r\n    \"last_name\": \"Cabral\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/users/register",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "users",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login de usuario",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"seed.user24@example.com\",\r\n    \"password\": \"Password123!\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/users/login",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "users",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Modificar usuario",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"lucas@hotmail.com\",\r\n    \"password\": \"123456\",\r\n    \"name\": \"Lucas\",\r\n    \"last_name\": \"Cabral\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/users",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener productos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/products?page=1&limit=10",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "products"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener producto por id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/products/718bd5e5-6002-4d0d-ad5c-8c1ea8cd71d5",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "products",
+            "718bd5e5-6002-4d0d-ad5c-8c1ea8cd71d5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear producto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Mi nuevo intento de producto\",\r\n    \"description\": \"Productos de testeo\",\r\n    \"price\": 100.00,\r\n    \"stock\": 100,\r\n    \"category_id\": \"4caa48dd-7ff6-4d6e-9ab9-27e3e650884b\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/products",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "products"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar producto",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Actualizado reciente 3\",\r\n    \"description\": \"Actualizado recientemente 3\",\r\n    \"price\": 20.00,\r\n    \"stock\": 2200\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/products/718bd5e5-6002-4d0d-ad5c-8c1ea8cd71d5",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "products",
+            "718bd5e5-6002-4d0d-ad5c-8c1ea8cd71d5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar producto",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/products/3733639e-6c36-48e7-b78f-f8b53538e014",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "products",
+            "3733639e-6c36-48e7-b78f-f8b53538e014"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener ordenes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "localhost:8080/orders",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener orden por id",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "localhost:8080/orders/ffdacbdf-5354-47da-b2db-4c74b4272980",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "orders",
+            "ffdacbdf-5354-47da-b2db-4c74b4272980"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear orden",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n      \"items\": [\r\n        {\r\n          \"product_id\": \"27b4b27b-6dda-47a1-b61a-c4e58a8cabe0\",\r\n          \"quantity\": 8,\r\n          \"price_at_moment\": 50.00\r\n        }\r\n      ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/orders",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Pagar orden manualmente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/orders/a88df45c-f6ca-4034-92f7-5cfcc5388fef/pay",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "orders",
+            "a88df45c-f6ca-4034-92f7-5cfcc5388fef",
+            "pay"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Modificar estado de orden por id",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjI5NzI0MjgzLTk1ZWQtNDljYy1hMTE5LTU5NDRjYmI5NmQwMSIsImVtYWlsIjoidGVzdEBob3RtYWlsLmNvbSIsImZpcnN0X25hbWUiOiJMdWNhcyIsImxhc3RfbmFtZSI6IkNhYnJhbCIsImV4cCI6MTc3Mzc4NTg3OCwiaWF0IjoxNzcxMTkzODc4fQ.Oe1L5NDfMpx5-SiQlQhlIOe9NJdJfWqMG9vthovJl4U",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"status\": \"PENDING\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/orders/e6fbbb07-2295-4b29-8806-3069c22c0d80",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "orders",
+            "e6fbbb07-2295-4b29-8806-3069c22c0d80"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cambiar estado de order a pagada por id",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/orders/e6fbbb07-2295-4b29-8806-3069c22c0d80/pay",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "orders",
+            "e6fbbb07-2295-4b29-8806-3069c22c0d80",
+            "pay"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ver mi carito",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "localhost:8080/cart",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "cart"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Agregar productos a carrito",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"product_id\": \"718bd5e5-6002-4d0d-ad5c-8c1ea8cd71d5\",\r\n    \"quantity\": 20\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/cart/items",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "cart",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Checkout (crea orden y limpia carrito)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/cart/checkout",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "cart",
+            "checkout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar mi carrito",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1YzQwZWMyLWE3OTktNDU4My1iYjQzLTNjNzlmM2VkNmFlYSIsImVtYWlsIjoic2VlZC51c2VyMjRAZXhhbXBsZS5jb20iLCJmaXJzdF9uYW1lIjoiVXNlcjI0IiwibGFzdF9uYW1lIjoiU2VlZCIsImV4cCI6MTc3Mzg4MjEyMywiaWF0IjoxNzcxMjkwMTIzfQ.wE8BAtj7uBv8oCeIG4zrRofaH0Z1tQK3d-5TzxGhNZg",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/cart",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "cart"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar producto de mi carrito",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjI5NzI0MjgzLTk1ZWQtNDljYy1hMTE5LTU5NDRjYmI5NmQwMSIsImVtYWlsIjoidGVzdEBob3RtYWlsLmNvbSIsImZpcnN0X25hbWUiOiJMdWNhcyIsImxhc3RfbmFtZSI6IkNhYnJhbCIsImV4cCI6MTc3Mzc4NTg3OCwiaWF0IjoxNzcxMTkzODc4fQ.Oe1L5NDfMpx5-SiQlQhlIOe9NJdJfWqMG9vthovJl4U",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/cart/items/0416b382-fcec-40fb-8132-16151b232fac",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "cart",
+            "items",
+            "0416b382-fcec-40fb-8132-16151b232fac"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Modificar cantidad de producto de mi carrito",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjI5NzI0MjgzLTk1ZWQtNDljYy1hMTE5LTU5NDRjYmI5NmQwMSIsImVtYWlsIjoidGVzdEBob3RtYWlsLmNvbSIsImZpcnN0X25hbWUiOiJMdWNhcyIsImxhc3RfbmFtZSI6IkNhYnJhbCIsImV4cCI6MTc3Mzc4NTg3OCwiaWF0IjoxNzcxMTkzODc4fQ.Oe1L5NDfMpx5-SiQlQhlIOe9NJdJfWqMG9vthovJl4U",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"quantity\": 22\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "localhost:8080/cart/items/0678f6b3-3f25-4f53-9a32-278b779ac6de",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "cart",
+            "items",
+            "0678f6b3-3f25-4f53-9a32-278b779ac6de"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

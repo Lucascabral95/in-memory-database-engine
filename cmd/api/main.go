@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lucas-dev/in-memory-db/docs"
 	"github.com/lucas-dev/in-memory-db/internal/config"
 	"github.com/lucas-dev/in-memory-db/internal/database"
 	"github.com/lucas-dev/in-memory-db/internal/repository"
@@ -11,8 +12,37 @@ import (
 	"github.com/lucas-dev/in-memory-db/internal/server"
 	"github.com/lucas-dev/in-memory-db/internal/service"
 	"github.com/lucas-dev/in-memory-db/internal/storage"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title In-Memory Database Engine API
+// @version 1.0.0
+// @description API REST de e-commerce con arquitectura por capas, JWT, PostgreSQL, carrito en memoria (TTL 24h), checkout atomico y control transaccional de stock.
+// @contact.name Lucas Cabral
+// @contact.url https://github.com/Lucascabral95
+// @contact.email lucassimple@hotmail.com
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+// @host localhost:8080
+// @BasePath /
+// @schemes http https
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Formato: Bearer <token>
+// @tag.name users
+// @tag.description Gestion de usuarios y autenticacion JWT.
+// @tag.name products
+// @tag.description CRUD de productos con control de stock.
+// @tag.name categories
+// @tag.description Gestion de categorias de productos.
+// @tag.name orders
+// @tag.description Ordenes de compra con estados y ownership enforcement.
+// @tag.name cart
+// @tag.description Carrito en memoria RAM con TTL de 24h y renovacion automatica.
+// @tag.name stock-movements
+// @tag.description Registro de movimientos de inventario (SALE, RESTOCK, ADJUSTMENT).
 func main() {
 	cfg := config.LoadConfig()
 	log.Printf("=> Environment: %s", cfg.Environment)
@@ -56,6 +86,9 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	// Swagger UI: http://localhost:<PORT>/swagger/index.html
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	routes.SetupRoutes(r, cfg, categoryService, userService, productService, orderService, memoryStore)
 

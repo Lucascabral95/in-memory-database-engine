@@ -19,6 +19,17 @@ func NewCategoryHandler(categoryService *service.CategoryService) *CategoryHandl
 	}
 }
 
+// CreateCategory godoc
+// @Summary Crear categoria
+// @Description Crear una categoria nueva de productos
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param body body model.Category true "Datos de la categoria"
+// @Success 201 {object} model.Category
+// @Failure 400 {object} map[string]string "JSON invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	var category model.Category
 
@@ -35,6 +46,14 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	c.JSON(http.StatusCreated, category)
 }
 
+// FindAllCategories godoc
+// @Summary Buscar categorias
+// @Description Buscar todas las categorias de la API
+// @Tags categories
+// @Produce json
+// @Success 200 {object} []model.Category
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /categories [get]
 func (h *CategoryHandler) FindAllCategories(c *gin.Context) {
 	categories, err := h.categoryService.FindAllCategories()
 	if err != nil {
@@ -45,6 +64,16 @@ func (h *CategoryHandler) FindAllCategories(c *gin.Context) {
 	c.JSON(http.StatusOK, categories)
 }
 
+// FindCategoryByID godoc
+// @Summary Buscar categoria
+// @Description Buscar una categoria por su UUID
+// @Tags categories
+// @Produce json
+// @Param id path string true "UUID de la categoria"
+// @Success 200 {object} model.Category
+// @Failure 400 {object} map[string]string "UUID invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /categories/{id} [get]
 func (h *CategoryHandler) FindCategoryByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -62,6 +91,18 @@ func (h *CategoryHandler) FindCategoryByID(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
+// UpdateCategory godoc
+// @Summary Actualizar categoría
+// @Description Actualizar nombre de la categoria segun su UUID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param id path string true "UUID de la categoría"
+// @Param body body model.Category true "Datos de la categoría"
+// @Success 200 {object} model.Category
+// @Failure 400 {object} map[string]string "UUID/JSON invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /categories/{id} [patch]
 func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 	id := c.Param("id")
 
@@ -87,6 +128,15 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
+// DeleteCategory godoc
+// @Summary Eliminar producto
+// @Description Eliminar un producto segun su UUID
+// @Tags categories
+// @Produce json
+// @Param id path string true "UUID de la categoría"
+// @Success 200 {object} map[string]string "Categoría eliminada exitosamente"
+// @Failure 400 {object} map[string]string "UUID invalido o error al eliminar"
+// @Router /categories/{id} [delete]
 func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
 	id := c.Param("id")
 

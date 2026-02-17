@@ -2,6 +2,7 @@ package model
 
 import "github.com/google/uuid"
 
+// OrderItem representa un producto en una orden
 type OrderItem struct {
 	BaseModel
 	OrderID       uuid.UUID `gorm:"type:uuid;not null;index" json:"order_id"`

@@ -1,0 +1,999 @@
+basePath: /
+definitions:
+  handler.addToCartRequest:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  handler.updateCartItemRequest:
+    properties:
+      quantity:
+        type: integer
+    required:
+    - quantity
+    type: object
+  model.Cart:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.CartItem'
+        type: array
+      user_id:
+        type: string
+    type: object
+  model.CartItem:
+    properties:
+      price:
+        type: number
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  model.Category:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      products:
+        items:
+          $ref: '#/definitions/model.Product'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  model.LoginUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  model.Order:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/model.OrderItem'
+        type: array
+      status:
+        $ref: '#/definitions/model.OrderStatus'
+      total_amount:
+        type: number
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+      user_id:
+        type: string
+    type: object
+  model.OrderItem:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      order_id:
+        type: string
+      price_at_moment:
+        type: number
+      product:
+        $ref: '#/definitions/model.Product'
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.OrderStatus:
+    enum:
+    - PENDING
+    - PAID
+    - SHIPPED
+    - CANCELLED
+    type: string
+    x-enum-varnames:
+    - OrderStatusPending
+    - OrderStatusPaid
+    - OrderStatusShipped
+    - OrderStatusCancelled
+  model.Product:
+    properties:
+      category:
+        $ref: '#/definitions/model.Category'
+      category_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      sku:
+        type: string
+      stock:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.ProductResponse:
+    properties:
+      data: {}
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  model.UpdateOrderStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/model.OrderStatus'
+        enum:
+        - PENDING
+        - PAID
+        - SHIPPED
+        - CANCELLED
+    required:
+    - status
+    type: object
+  model.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      orders:
+        items:
+          $ref: '#/definitions/model.Order'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  model.UserCreateRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: lucassimple@hotmail.com
+    name: Lucas Cabral
+    url: https://github.com/Lucascabral95
+  description: API REST de e-commerce con arquitectura por capas, JWT, PostgreSQL,
+    carrito en memoria (TTL 24h), checkout atomico y control transaccional de stock.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: In-Memory Database Engine API
+  version: 1.0.0
+paths:
+  /cart:
+    delete:
+      description: Vaciar mi carrito de compras
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: cart_cleared" model.cart
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Vaciar mi carrito
+      tags:
+      - cart
+    get:
+      description: Obtener mi carrito de compras
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Cart'
+        "404":
+          description: Cart expired or empty
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: No se pudo decodificar el carrito en memoria
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener mi carrito
+      tags:
+      - cart
+    post:
+      consumes:
+      - application/json
+      description: Agregar producto/s al carrito
+      parameters:
+      - description: Datos del carrito
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.addToCartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: saved in RAM" model.Cart
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Agregar producto/s al carrito
+      tags:
+      - cart
+  /cart/{product_id}:
+    delete:
+      description: Remover un producto de mi carrito por su UUID
+      parameters:
+      - description: UUID del producto
+        in: path
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: item_removed" model.Cart
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: UUID invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remover producto de mi carrito
+      tags:
+      - cart
+    patch:
+      consumes:
+      - application/json
+      description: Actualizar cantidad de productos de mi carrito por su UUID
+      parameters:
+      - description: UUID del producto
+        in: path
+        name: product_id
+        required: true
+        type: string
+      - description: Datos del carrito
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateCartItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: item_updated" model.Cart
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Actualizar cantidad de productos de mi carrito
+      tags:
+      - cart
+  /cart/checkout:
+    post:
+      description: Realizar checkout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success" model.OrderStatus map[string]string map[string]string
+            "Checkout completado y orden pagada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: failed" model.OrderStatus map[string]string map[string]string
+            "Cart expired or empty
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: failed" model.OrderStatus map[string]string map[string]string
+            "No se pudo obtener el producto para checkou
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Realizar checkout
+      tags:
+      - cart
+  /categories:
+    get:
+      description: Buscar todas las categorias de la API
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Category'
+            type: array
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Buscar categorias
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Crear una categoria nueva de productos
+      parameters:
+      - description: Datos de la categoria
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.Category'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Category'
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Crear categoria
+      tags:
+      - categories
+  /categories/{id}:
+    delete:
+      description: Eliminar un producto segun su UUID
+      parameters:
+      - description: UUID de la categoría
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Categoría eliminada exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: UUID invalido o error al eliminar
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Eliminar producto
+      tags:
+      - categories
+    get:
+      description: Buscar una categoria por su UUID
+      parameters:
+      - description: UUID de la categoria
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "400":
+          description: UUID invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Buscar categoria
+      tags:
+      - categories
+    patch:
+      consumes:
+      - application/json
+      description: Actualizar nombre de la categoria segun su UUID
+      parameters:
+      - description: UUID de la categoría
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la categoría
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.Category'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "400":
+          description: UUID/JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Actualizar categoría
+      tags:
+      - categories
+  /orders:
+    get:
+      description: Obtener todas las ordenes de pago
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Order'
+            type: array
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener todas las ordenes
+      tags:
+      - orders
+    post:
+      description: Crear orden de pago
+      parameters:
+      - description: Datos de la orden
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.Order'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Order'
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Crear orden
+      tags:
+      - orders
+  /orders/{id}:
+    get:
+      description: Obtener orden de pago por UUID
+      parameters:
+      - description: UUID de la orden
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Order'
+        "400":
+          description: UUID invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener order
+      tags:
+      - orders
+    patch:
+      description: Actualizar estado de pago de una orden segun su UUID
+      parameters:
+      - description: UUID de la orden
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la orden
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateOrderStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Orden actualizada exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: UUID invalido o error al actualizar
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Actualizar estado de orden
+      tags:
+      - orders
+  /orders/{id}/pay:
+    patch:
+      description: Cambiar estao de la orden a pagada segun su UUID
+      parameters:
+      - description: UUID de la orden
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Orden pagada exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: UUID invalido o error al pagar
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cambiar estado de orden a pagada
+      tags:
+      - orders
+  /products:
+    get:
+      description: Lista productos paginados.
+      parameters:
+      - default: 10
+        description: Cantidad por pagina
+        in: query
+        name: limit
+        type: integer
+      - default: 1
+        description: Numero de pagina
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProductResponse'
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Listar productos
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Crea un producto nuevo y genera SKU automaticamente.
+      parameters:
+      - description: Datos del producto
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.Product'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Product'
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Crear producto
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      description: Elimina un producto por UUID.
+      parameters:
+      - description: UUID del producto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Producto eliminado exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: UUID invalido o error al eliminar
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Eliminar producto
+      tags:
+      - products
+    get:
+      description: Devuelve un producto por su UUID.
+      parameters:
+      - description: UUID del producto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Product'
+        "400":
+          description: UUID invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener producto
+      tags:
+      - products
+    patch:
+      consumes:
+      - application/json
+      description: Actualiza nombre, descripcion, precio, stock o categoria de un
+        producto.
+      parameters:
+      - description: UUID del producto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a actualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.Product'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Producto actualizado exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: UUID/JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Actualizar producto
+      tags:
+      - products
+  /users:
+    patch:
+      consumes:
+      - application/json
+      description: Actualiza datos del usuario
+      parameters:
+      - description: Usuario actualizado
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuario actualizado
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar usuario
+      tags:
+      - users
+  /users/{email}:
+    delete:
+      description: Elimina un usuario por email
+      parameters:
+      - description: Email del usuario
+        in: path
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuario eliminado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Email requerido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar usuario
+      tags:
+      - users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica usuario y devuelve JWT
+      parameters:
+      - description: Credenciales
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message + token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Credenciales invalidas
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login de usuario
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Crea un nuevo usuario
+      parameters:
+      - description: Datos de registro
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuario creado exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: JSON invalido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Registrar usuario
+      tags:
+      - users
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: 'Formato: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

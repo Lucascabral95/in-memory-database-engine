@@ -21,6 +21,16 @@ func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
 	}
 }
 
+// CreateOrder godoc
+// @Summary Crear orden
+// @Description Crear orden de pago
+// @Tags orders
+// @Produce json
+// @Param body body model.Order true "Datos de la orden"
+// @Success 201 {object} model.Order
+// @Failure 400 {object} map[string]string "JSON invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	userID, ok := h.getAuthUserID(c)
 	if !ok {
@@ -51,6 +61,14 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	c.JSON(http.StatusCreated, createdOrder)
 }
 
+// GetAllOrders godoc
+// @Summary Obtener todas las ordenes
+// @Description Obtener todas las ordenes de pago
+// @Tags orders
+// @Produce json
+// @Success 200 {object} []model.Order
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /orders [get]
 func (h *OrderHandler) GetAllOrders(g *gin.Context) {
 	authUserID, ok := h.getAuthUserID(g)
 	if !ok {
@@ -66,6 +84,16 @@ func (h *OrderHandler) GetAllOrders(g *gin.Context) {
 	g.JSON(http.StatusOK, orders)
 }
 
+// GetOrderByID godoc
+// @Summary Obtener order
+// @Description Obtener orden de pago por UUID
+// @Tags orders
+// @Produce json
+// @Param id path string true "UUID de la orden"
+// @Success 200 {object} model.Order
+// @Failure 400 {object} map[string]string "UUID invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrderByID(g *gin.Context) {
 	orderID := g.Param("id")
 
@@ -103,6 +131,16 @@ func (h *OrderHandler) GetOrderByID(g *gin.Context) {
 // 	c.JSON(http.StatusOK, gin.H{"message": "Orden eliminada exitosamente"})
 // }
 
+// UpdateStatusOrder godoc
+// @Summary Actualizar estado de orden
+// @Description Actualizar estado de pago de una orden segun su UUID
+// @Tags orders
+// @Produce json
+// @Param id path string true "UUID de la orden"
+// @Param body body model.UpdateOrderStatusRequest true "Datos de la orden"
+// @Success 200 {object} map[string]string "Orden actualizada exitosamente"
+// @Failure 400 {object} map[string]string "UUID invalido o error al actualizar"
+// @Router /orders/{id} [patch]
 func (h *OrderHandler) UpdateStatusOrder(c *gin.Context) {
 	orderID := c.Param("id")
 
@@ -141,6 +179,15 @@ func (h *OrderHandler) UpdateStatusOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Orden actualizada exitosamente"})
 }
 
+// OrderUpdatePay godoc
+// @Summary Cambiar estado de orden a pagada
+// @Description Cambiar estao de la orden a pagada segun su UUID
+// @Tags orders
+// @Produce json
+// @Param id path string true "UUID de la orden"
+// @Success 200 {object} map[string]string "Orden pagada exitosamente"
+// @Failure 400 {object} map[string]string "UUID invalido o error al pagar"
+// @Router /orders/{id}/pay [patch]
 func (h *OrderHandler) OrderUpdatePay(c *gin.Context) {
 	orderID := c.Param("id")
 
