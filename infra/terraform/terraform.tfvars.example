@@ -1,0 +1,11 @@
+aws_region         = "us-east-1"
+project_name       = "in-memory-db"
+environment        = "prod"
+instance_type      = "t3.small"
+
+database_url       = "postgresql://user:password@host:5432/database?sslmode=require"
+jwt_secret         = "change-this-to-a-very-strong-secret"
+
+port               = "8080"
+redis_tcp_enabled  = false
+redis_tcp_port     = "6379"

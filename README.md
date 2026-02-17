@@ -15,6 +15,7 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 - [Catalogo de endpoints](#catalogo-de-endpoints)
 - [Guia de instalacion y ejecucion](#guia-de-instalacion-y-ejecucion)
 - [Guia Docker (build y run)](#guia-docker-build-y-run)
+- [Despliegue AWS (EC2 + ECR + Terraform)](#despliegue-aws-ec2--ecr--terraform)
 - [Guia de pruebas paso a paso con cURL](#guia-de-pruebas-paso-a-paso-con-curl)
 - [Documentacion Swagger](#documentacion-swagger)
 - [Coleccion Postman](#coleccion-postman)
@@ -353,6 +354,82 @@ docker run --rm -p 8080:8080 \
 curl http://localhost:8080/health
 ```
 
+## Despliegue AWS (EC2 + ECR + Terraform)
+
+Este proyecto incluye infraestructura IaC en `infra/terraform` para desplegar:
+
+- ECR para la imagen Docker.
+- EC2 (`t3.small`) para ejecutar la API con Docker + `systemd`.
+- SSM Parameter Store para variables de entorno.
+- Security Group abierto a internet (requisito actual).
+- Flujo CI/CD para build + push a ECR + restart remoto por SSM.
+
+### 1) Preparar variables de Terraform
+
+```bash
+cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars
+```
+
+Completar `terraform.tfvars` (minimo):
+
+- `database_url`
+- `jwt_secret`
+
+### 2) Crear infraestructura
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+Terraform crea:
+
+- `aws_ecr_repository`
+- `aws_instance`
+- `aws_security_group` (abierto a `0.0.0.0/0`)
+- IAM Role/Instance Profile para SSM + ECR ReadOnly
+- SSM parameters (`/in-memory-db/prod/...`)
+
+### 3) Configurar GitHub Secrets para deploy
+
+Configura en GitHub:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION` (ej. `us-east-1`)
+- `ECR_REPOSITORY_URL` (output de Terraform)
+- `EC2_INSTANCE_ID` (output de Terraform)
+
+### 4) Deploy automatico desde GitHub Actions
+
+El workflow `.github/workflows/deploy-ec2.yml` hace:
+
+1. Build/test de la app.
+2. Build de imagen Docker y push a ECR (`latest` + `sha`).
+3. `aws ssm send-command` para:
+   - refrescar `.env` desde SSM
+   - reiniciar servicio `in-memory-db`
+   - validar estado del servicio
+
+Trigger:
+
+- Push a `main`
+- `workflow_dispatch`
+
+### 5) Verificar API en EC2
+
+```bash
+curl http://<EC2_PUBLIC_IP>:8080/products
+```
+
+Notas:
+
+- No se usa ELB en este setup.
+- La instancia es single-host (sin alta disponibilidad).
+- El SG esta abierto por requerimiento y debe endurecerse en una fase futura.
+
 ## Guia de pruebas paso a paso con cURL
 
 ### Paso 0: definir base
@@ -597,8 +674,8 @@ Configura en GitHub (`Settings -> Branches` o `Rulesets`) para `main`:
 ## 🧪 Scripts y comandos
 
 ```bash
-# ejecutar app
-go run cmd/api/main.go
+# ejecutar app (windows-friendly, sin go run)
+npm run dev
 
 # compilar
 go build -o api.exe cmd/api/main.go
@@ -612,6 +689,11 @@ go test ./...
 
 # swagger
 npm run swagger:init
+
+# terraform (aws deploy)
+npm run infra:init
+npm run infra:plan
+npm run infra:apply
 
 # seed de datos
 go run cmd/seed/main.go
