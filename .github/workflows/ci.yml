@@ -20,13 +20,28 @@ jobs:
     name: Go Build & Test
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      PORT: ${{ secrets.PORT }}
-      ENV: ${{ secrets.ENV }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      REDIS_TCP_ENABLED: ${{ secrets.REDIS_TCP_ENABLED }}
-      REDIS_TCP_PORT: ${{ secrets.REDIS_TCP_PORT }}
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/in_memory_db_test?sslmode=disable
+      PORT: "8080"
+      ENV: test
+      JWT_SECRET: ci-test-secret
+      REDIS_TCP_ENABLED: "false"
+      REDIS_TCP_PORT: "6379"
       RUN_DB_TESTS: "1"
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: in_memory_db_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d in_memory_db_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout
@@ -37,11 +52,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-
-      - name: Validate required secrets
-        run: |
-          test -n "$DATABASE_URL" || (echo "DATABASE_URL secret is missing" && exit 1)
-          test -n "$JWT_SECRET" || (echo "JWT_SECRET secret is missing" && exit 1)
 
       - name: Download dependencies
         run: go mod download
