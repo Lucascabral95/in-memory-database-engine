@@ -43,6 +43,17 @@ type updateCartItemRequest struct {
 	Quantity int `json:"quantity" binding:"required"`
 }
 
+// AddToCart godoc
+// @Summary Agregar producto/s al carrito
+// @Description Agregar producto/s al carrito
+// @Tags cart
+// @Accept json
+// @Produce json
+// @Param body body addToCartRequest true "Datos del carrito"
+// @Success 200 {object} map[string]string "saved in RAM" model.Cart
+// @Failure 400 {object} map[string]string "JSON invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /cart [post]
 func (h *CartHandler) AddToCart(c *gin.Context) {
 	userID, userIDStr, ok := getUserIDFromContext(c)
 	if !ok {
@@ -133,6 +144,18 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": status, "cart": cart})
 }
 
+// UpdateCartItem godoc
+// @Summary Actualizar cantidad de productos de mi carrito
+// @Description Actualizar cantidad de productos de mi carrito por su UUID
+// @Tags cart
+// @Accept json
+// @Produce json
+// @Param product_id path string true "UUID del producto"
+// @Param body body updateCartItemRequest true "Datos del carrito"
+// @Success 200 {object} map[string]string "item_updated" model.Cart
+// @Failure 400 {object} map[string]string "JSON invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /cart/{product_id} [patch]
 func (h *CartHandler) UpdateCartItem(c *gin.Context) {
 	userID, userIDStr, ok := getUserIDFromContext(c)
 	if !ok {
@@ -229,6 +252,16 @@ func (h *CartHandler) UpdateCartItem(c *gin.Context) {
 	})
 }
 
+// RemoveCartItem godoc
+// @Summary Remover producto de mi carrito
+// @Description Remover un producto de mi carrito por su UUID
+// @Tags cart
+// @Produce json
+// @Param product_id path string true "UUID del producto"
+// @Success 200 {object} map[string]string "item_removed" model.Cart
+// @Failure 400 {object} map[string]string "UUID invalido"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /cart/{product_id} [delete]
 func (h *CartHandler) RemoveCartItem(c *gin.Context) {
 	userID, userIDStr, ok := getUserIDFromContext(c)
 	if !ok {
@@ -284,6 +317,14 @@ func (h *CartHandler) RemoveCartItem(c *gin.Context) {
 	})
 }
 
+// ClearCart godoc
+// @Summary Vaciar mi carrito
+// @Description Vaciar mi carrito de compras
+// @Tags cart
+// @Produce json
+// @Success 200 {object} map[string]string "cart_cleared" model.cart
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /cart [delete]
 func (h *CartHandler) ClearCart(c *gin.Context) {
 	userID, userIDStr, ok := getUserIDFromContext(c)
 	if !ok {
@@ -300,6 +341,15 @@ func (h *CartHandler) ClearCart(c *gin.Context) {
 	})
 }
 
+// GetCart godoc
+// @Summary Obtener mi carrito
+// @Description Obtener mi carrito de compras
+// @Tags cart
+// @Produce json
+// @Success 200 {object} model.Cart
+// @Failure 404 {object} map[string]string "Cart expired or empty"
+// @Failure 500 {object} map[string]string "No se pudo decodificar el carrito en memoria"
+// @Router /cart [get]
 func (h *CartHandler) GetCart(c *gin.Context) {
 	userID, userIDStr, ok := getUserIDFromContext(c)
 	if !ok {
@@ -320,6 +370,15 @@ func (h *CartHandler) GetCart(c *gin.Context) {
 	c.JSON(http.StatusOK, cart)
 }
 
+// Cehckout godoc
+// @Summary Realizar checkout
+// @Description Realizar checkout
+// @Tags cart
+// @Produce json
+// @Success 200 {object} map[string]string "success" model.OrderStatus map[string]string map[string]string "Checkout completado y orden pagada"
+// @Failure 400 {object} map[string]string "failed" model.OrderStatus map[string]string map[string]string "Cart expired or empty"
+// @Failure 500 {object} map[string]string "failed" model.OrderStatus map[string]string map[string]string "No se pudo obtener el producto para checkou"
+// @Router /cart/checkout [post]
 func (h *CartHandler) Checkout(c *gin.Context) {
 	userID, userIDStr, ok := getUserIDFromContext(c)
 	if !ok {

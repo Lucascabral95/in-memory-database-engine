@@ -2,6 +2,7 @@ package model
 
 import "github.com/google/uuid"
 
+// Order representa una orden de compra
 type Order struct {
 	BaseModel
 	UserID uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
@@ -12,6 +13,7 @@ type Order struct {
 	Items       []OrderItem `gorm:"foreignKey:OrderID" json:"items,omitempty"`
 }
 
+// OrderStatus representa el estado de una orden
 type OrderStatus string
 
 const (
@@ -21,6 +23,7 @@ const (
 	OrderStatusCancelled OrderStatus = "CANCELLED"
 )
 
+// UpdateOrderStatusRequest representa la solicitud para actualizar el estado de una orden
 type UpdateOrderStatusRequest struct {
 	Status OrderStatus `json:"status" binding:"required,oneof=PENDING PAID SHIPPED CANCELLED"`
 }

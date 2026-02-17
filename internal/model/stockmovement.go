@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// StockMovementReason representa el motivo de un movimiento de stock
 type StockMovementReason string
 
 const (
@@ -15,6 +16,7 @@ const (
 	StockMovementReasonAdjustment StockMovementReason = "ADJUSTMENT"
 )
 
+// StockMovement representa un movimiento de stock
 type StockMovement struct {
 	ID        uuid.UUID           `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	ProductID uuid.UUID           `gorm:"type:uuid;not null;index" json:"product_id"`

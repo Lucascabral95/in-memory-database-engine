@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// BaseModel representa el modelo base para todas las tablas
 type BaseModel struct {
 	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`

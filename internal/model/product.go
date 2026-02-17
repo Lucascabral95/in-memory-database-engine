@@ -2,6 +2,7 @@ package model
 
 import "github.com/google/uuid"
 
+// Product representa un producto
 type Product struct {
 	BaseModel
 	Name        string     `gorm:"index;not null" json:"name"`
@@ -13,6 +14,7 @@ type Product struct {
 	Category    *Category  `gorm:"foreignKey:CategoryID;references:ID" json:"category,omitempty"`
 }
 
+// ProductResponse representa la respuesta al buscar todos los productos, con su respectiva paginación
 type ProductResponse struct {
 	Data       interface{} `json:"data"`
 	Total      int         `json:"total"`

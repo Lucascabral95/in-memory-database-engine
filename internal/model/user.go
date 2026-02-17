@@ -1,5 +1,6 @@
 package model
 
+// User representa un usuario
 type User struct {
 	BaseModel
 	Email     string  `gorm:"uniqueIndex;not null" json:"email"`
@@ -9,7 +10,7 @@ type User struct {
 	Orders    []Order `gorm:"foreignKey:UserID" json:"orders,omitempty"`
 }
 
-// DTOs de users
+// UserCreateRequest representa la solicitud de creación de un usuario
 type UserCreateRequest struct {
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=6"`
@@ -17,11 +18,13 @@ type UserCreateRequest struct {
 	LastName  string `json:"last_name"`
 }
 
+// LoginUserRequest representa la solicitud de login
 type LoginUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
+// UserUpdateRequest representa la solicitud de actualización de un usuario
 type UserUpdateRequest struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
