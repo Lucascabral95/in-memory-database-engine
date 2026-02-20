@@ -16,6 +16,15 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+func registerSwaggerRoute(r *gin.Engine) {
+	// Swagger UI: http://localhost:<PORT>/swagger/index.html
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+}
+
+func serverAddr(port string) string {
+	return ":" + port
+}
+
 // @title In-Memory Database Engine API
 // @version 1.0.0
 // @description API REST de e-commerce con arquitectura por capas, JWT, PostgreSQL, carrito en memoria (TTL 24h), checkout atomico y control transaccional de stock.
@@ -87,12 +96,11 @@ func main() {
 
 	r := gin.Default()
 
-	// Swagger UI: http://localhost:<PORT>/swagger/index.html
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	registerSwaggerRoute(r)
 
 	routes.SetupRoutes(r, cfg, categoryService, userService, productService, orderService, memoryStore)
 
-	if err := r.Run(":" + cfg.Port); err != nil {
+	if err := r.Run(serverAddr(cfg.Port)); err != nil {
 		log.Fatalf("Failed to start HTTP server: %v", err)
 	}
 	log.Println("=> Server started on port " + cfg.Port)

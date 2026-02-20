@@ -60,3 +60,42 @@ func TestProductRepository_CRUDAndPagination(t *testing.T) {
 		t.Fatalf("GetProductByID() after delete expected error, got nil")
 	}
 }
+
+func TestProductRepository_GetAllProducts_RespectsLimitAndOffset(t *testing.T) {
+	tx := newRepositoryTestTx(t)
+	repo := NewProductRepository(tx)
+
+	for i := 0; i < 3; i++ {
+		product := &model.Product{
+			Name:        "paged-product-" + uuid.NewString(),
+			SKU:         "SKU-" + uuid.NewString(),
+			Description: "pagination test product",
+			Price:       50 + float64(i),
+			Stock:       5 + i,
+		}
+		if err := repo.CreateProduct(product); err != nil {
+			t.Fatalf("CreateProduct() error = %v", err)
+		}
+	}
+
+	page, total, err := repo.GetAllProducts(1, 1)
+	if err != nil {
+		t.Fatalf("GetAllProducts() error = %v", err)
+	}
+	if total < 3 {
+		t.Fatalf("total = %d, want >= 3", total)
+	}
+	if len(page) != 1 {
+		t.Fatalf("len(page) = %d, want %d", len(page), 1)
+	}
+}
+
+func TestProductRepository_GetProductByID_NotFound(t *testing.T) {
+	tx := newRepositoryTestTx(t)
+	repo := NewProductRepository(tx)
+
+	_, err := repo.GetProductByID(uuid.NewString())
+	if err == nil {
+		t.Fatalf("GetProductByID() expected error for non-existing product")
+	}
+}
