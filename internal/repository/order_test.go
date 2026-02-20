@@ -129,6 +129,83 @@ func TestOrderRepository_OrderUpdatePay_NotPending(t *testing.T) {
 	}
 }
 
+func TestOrderRepository_GetAllOrders_And_GetOrdersByUserID(t *testing.T) {
+	tx := newRepositoryTestTx(t)
+	repo := NewOrderRepository(tx)
+
+	userA := seedUser(t, tx)
+	userB := seedUser(t, tx)
+	product := seedProduct(t, tx, 30)
+
+	orderA1 := seedOrder(t, tx, userA.ID, product.ID, 1, 10)
+	orderA2 := seedOrder(t, tx, userA.ID, product.ID, 2, 10)
+	_ = seedOrder(t, tx, userB.ID, product.ID, 3, 10)
+
+	all, err := repo.GetAllOrders()
+	if err != nil {
+		t.Fatalf("GetAllOrders() error = %v", err)
+	}
+	if len(all) < 3 {
+		t.Fatalf("GetAllOrders() len = %d, want >= 3", len(all))
+	}
+
+	byUserA, err := repo.GetOrdersByUserID(userA.ID.String())
+	if err != nil {
+		t.Fatalf("GetOrdersByUserID() error = %v", err)
+	}
+	if len(byUserA) != 2 {
+		t.Fatalf("GetOrdersByUserID(userA) len = %d, want %d", len(byUserA), 2)
+	}
+
+	ids := map[uuid.UUID]struct{}{}
+	for _, o := range byUserA {
+		ids[o.ID] = struct{}{}
+		if o.UserID != userA.ID {
+			t.Fatalf("GetOrdersByUserID() returned order from another user: got=%s want=%s", o.UserID, userA.ID)
+		}
+	}
+	if _, ok := ids[orderA1.ID]; !ok {
+		t.Fatalf("GetOrdersByUserID() missing orderA1")
+	}
+	if _, ok := ids[orderA2.ID]; !ok {
+		t.Fatalf("GetOrdersByUserID() missing orderA2")
+	}
+}
+
+func TestOrderRepository_UpdateStatusOrder(t *testing.T) {
+	tx := newRepositoryTestTx(t)
+	repo := NewOrderRepository(tx)
+
+	user := seedUser(t, tx)
+	product := seedProduct(t, tx, 10)
+	order := seedOrder(t, tx, user.ID, product.ID, 1, 20)
+
+	update := &model.UpdateOrderStatusRequest{
+		Status: model.OrderStatusShipped,
+	}
+	if err := repo.UpdateStatusOrder(update, order.ID.String()); err != nil {
+		t.Fatalf("UpdateStatusOrder() error = %v", err)
+	}
+
+	got, err := repo.GetOrderByID(order.ID.String())
+	if err != nil {
+		t.Fatalf("GetOrderByID() error = %v", err)
+	}
+	if got.Status != model.OrderStatusShipped {
+		t.Fatalf("order status = %s, want %s", got.Status, model.OrderStatusShipped)
+	}
+}
+
+func TestOrderRepository_GetOrderByID_NotFound(t *testing.T) {
+	tx := newRepositoryTestTx(t)
+	repo := NewOrderRepository(tx)
+
+	_, err := repo.GetOrderByID(uuid.NewString())
+	if err == nil {
+		t.Fatalf("GetOrderByID() expected error for non-existing order")
+	}
+}
+
 func seedUser(t *testing.T, tx repositoryTestDB) model.User {
 	t.Helper()
 
