@@ -51,3 +51,27 @@ variable "redis_tcp_port" {
   type        = string
   default     = "6379"
 }
+
+variable "db_max_open_conns" {
+  description = "Database maximum number of open connections."
+  type        = number
+  default     = 20
+}
+
+variable "db_max_idle_conns" {
+  description = "Database maximum number of idle connections."
+  type        = number
+  default     = 10
+}
+
+variable "db_conn_max_lifetime" {
+  description = "Maximum amount of time a connection may be reused (Go duration format, e.g. 5m)."
+  type        = string
+  default     = "5m"
+}
+
+variable "db_conn_max_idle_time" {
+  description = "Maximum amount of time a connection may be idle (Go duration format, e.g. 1m)."
+  type        = string
+  default     = "1m"
+}

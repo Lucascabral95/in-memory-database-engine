@@ -26,6 +26,10 @@ jobs:
       JWT_SECRET: ci-test-secret
       REDIS_TCP_ENABLED: "false"
       REDIS_TCP_PORT: "6379"
+      DB_MAX_OPEN_CONNS: "20"
+      DB_MAX_IDLE_CONNS: "10"
+      DB_CONN_MAX_LIFETIME: "5m"
+      DB_CONN_MAX_IDLE_TIME: "1m"
       RUN_DB_TESTS: "1"
 
     services:

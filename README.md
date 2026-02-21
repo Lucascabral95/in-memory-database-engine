@@ -274,6 +274,10 @@ ENV=development
 JWT_SECRET=tu_clave_secreta
 REDIS_TCP_ENABLED=false
 REDIS_TCP_PORT=6379
+DB_MAX_OPEN_CONNS=20
+DB_MAX_IDLE_CONNS=10
+DB_CONN_MAX_LIFETIME=5m
+DB_CONN_MAX_IDLE_TIME=1m
 ```
 
 ### 4) Ejecutar API
@@ -632,7 +636,7 @@ El workflow de CI esta en `.github/workflows/ci.yml` y ejecuta tres checks:
 
 ### Variables de entorno en GitHub Actions
 
-El pipeline lee secretos del repositorio:
+En CI (`ci.yml`) se definen variables de test dentro del workflow:
 
 - `DATABASE_URL`
 - `PORT`
@@ -640,6 +644,18 @@ El pipeline lee secretos del repositorio:
 - `JWT_SECRET`
 - `REDIS_TCP_ENABLED`
 - `REDIS_TCP_PORT`
+- `DB_MAX_OPEN_CONNS`
+- `DB_MAX_IDLE_CONNS`
+- `DB_CONN_MAX_LIFETIME`
+- `DB_CONN_MAX_IDLE_TIME`
+
+En deploy (`deploy-ec2.yml`) los secretos requeridos de GitHub son:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `ECR_REPOSITORY_URL`
+- `EC2_INSTANCE_ID`
 
 ### Reproducir validacion en local
 
@@ -670,6 +686,10 @@ Configura en GitHub (`Settings -> Branches` o `Rulesets`) para `main`:
 | `JWT_SECRET` | Secreto JWT | No | `sd,fsdnlfksdmlkf` |
 | `REDIS_TCP_ENABLED` | Habilita servidor RESP TCP | No | `false` |
 | `REDIS_TCP_PORT` | Puerto TCP RESP | No | `6379` |
+| `DB_MAX_OPEN_CONNS` | Maximo de conexiones abiertas a DB | No | `20` |
+| `DB_MAX_IDLE_CONNS` | Maximo de conexiones inactivas en pool | No | `10` |
+| `DB_CONN_MAX_LIFETIME` | Tiempo maximo de vida de conexion DB | No | `5m` |
+| `DB_CONN_MAX_IDLE_TIME` | Tiempo maximo inactiva de conexion DB | No | `1m` |
 
 ## 🧪 Scripts y comandos
 

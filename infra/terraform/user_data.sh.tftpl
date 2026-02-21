@@ -33,6 +33,10 @@ ENV=$(get_param "${ssm_parameter_prefix}/ENV")
 JWT_SECRET=$(get_param "${ssm_parameter_prefix}/JWT_SECRET")
 REDIS_TCP_ENABLED=$(get_param "${ssm_parameter_prefix}/REDIS_TCP_ENABLED")
 REDIS_TCP_PORT=$(get_param "${ssm_parameter_prefix}/REDIS_TCP_PORT")
+DB_MAX_OPEN_CONNS=$(get_param "${ssm_parameter_prefix}/DB_MAX_OPEN_CONNS")
+DB_MAX_IDLE_CONNS=$(get_param "${ssm_parameter_prefix}/DB_MAX_IDLE_CONNS")
+DB_CONN_MAX_LIFETIME=$(get_param "${ssm_parameter_prefix}/DB_CONN_MAX_LIFETIME")
+DB_CONN_MAX_IDLE_TIME=$(get_param "${ssm_parameter_prefix}/DB_CONN_MAX_IDLE_TIME")
 EOT
 
 chmod 600 "$OUT_FILE"

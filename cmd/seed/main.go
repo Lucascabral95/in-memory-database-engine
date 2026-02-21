@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
@@ -35,7 +36,10 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
-	db := database.InitDB(cfg)
+	db, err := database.InitDB(context.Background(), cfg)
+	if err != nil {
+		log.Fatalf("failed to initialize database: %v", err)
+	}
 
 	defer func() {
 		if err := database.CloseDB(db); err != nil {
