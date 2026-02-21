@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -57,12 +58,17 @@ func main() {
 	log.Printf("=> Environment: %s", cfg.Environment)
 	log.Printf("=> Server port: %s", cfg.Port)
 
-	db := database.InitDB(cfg)
+	db, err := database.InitDB(context.Background(), cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+		return
+	}
 
 	defer func() {
-		log.Println("=> Closing database connection...")
 		if err := database.CloseDB(db); err != nil {
-			log.Printf("Warning: failed to close database: %v", err)
+			log.Printf("Error cerrando la base de datos: %v", err)
+		} else {
+			log.Println("Pool de conexiones cerrado correctamente")
 		}
 	}()
 

@@ -140,3 +140,21 @@ func TestComparePassword_Incorrect(t *testing.T) {
 		t.Errorf("Se esperaba error 'ErrMismatchedHashAndPassword', se obtuvo: %v", err)
 	}
 }
+
+func TestHashPassword_TooLong(t *testing.T) {
+	password := strings.Repeat("a", 73)
+
+	_, err := HashPassword(password)
+
+	if err == nil {
+		t.Fatal("se esperaba error para password mayor a 72 bytes")
+	}
+}
+
+func TestComparePassword_InvalidHash(t *testing.T) {
+	err := ComparePassword("invalid-hash", "password")
+
+	if err == nil {
+		t.Fatal("se esperaba error con hash invalido")
+	}
+}
