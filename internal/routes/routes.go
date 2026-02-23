@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lucas-dev/in-memory-db/internal/config"
@@ -9,6 +10,7 @@ import (
 	"github.com/lucas-dev/in-memory-db/internal/service"
 	"github.com/lucas-dev/in-memory-db/internal/storage"
 	"github.com/lucas-dev/in-memory-db/pkg/middleware"
+	"golang.org/x/time/rate"
 )
 
 func SetupRoutes(
@@ -25,6 +27,11 @@ func SetupRoutes(
 	productHandler := handler.NewProductHandler(productService)
 	orderHandler := handler.NewOrderHandler(orderService)
 	cartHandler := handler.NewCartHandler(memoryStore, productService, orderService)
+
+	globalURL := middleware.NewRateLimiter(rate.Every(time.Second/10), 20)
+	strictURL := middleware.NewRateLimiter(rate.Every(time.Minute/5), 5)
+
+	r.Use(globalURL.Middleware())
 
 	r.GET("/health", middleware.AuthMiddleware(cfg.JWTSecret), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -46,8 +53,8 @@ func SetupRoutes(
 
 	users := r.Group("/users")
 	{
-		users.POST("/register", userHandler.RegisterUser)
-		users.POST("/login", userHandler.LoginUser)
+		users.POST("/register", strictURL.Middleware(), userHandler.RegisterUser)
+		users.POST("/login", strictURL.Middleware(), userHandler.LoginUser)
 
 		users.DELETE("/:email", middleware.AuthMiddleware(cfg.JWTSecret), userHandler.DeleteUser)
 	}
