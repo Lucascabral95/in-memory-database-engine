@@ -8,6 +8,7 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 - [Caracteristicas principales](#caracteristicas-principales)
 - [Tecnologias utilizadas](#tecnologias-utilizadas)
 - [Arquitectura del sistema](#arquitectura-del-sistema)
+- [CORS](#cors)
 - [Rate Limiting](#rate-limiting)
 - [Flujo de checkout y pago con control de stock](#flujo-de-checkout-y-pago-con-control-de-stock)
 - [Carrito en memoria (24h) y Redis TCP opcional](#carrito-en-memoria-24h-y-redis-tcp-opcional)
@@ -50,6 +51,7 @@ La aplicacion sigue el patron `Handler -> Service -> Repository -> Database`.
 - Carrito en memoria con TTL 24h renovado en escrituras.
 - Endpoints de carrito para agregar, actualizar, remover items, limpiar carrito y checkout.
 - Ownership enforcement en ordenes: cada usuario solo puede ver/modificar/pagar sus ordenes.
+- CORS habilitado para clientes web (incluye `Authorization` y `X-Internal-Secret`).
 - Rate limiting por IP (global y estricto en autenticacion).
 - Redis TCP opcional compartiendo el mismo `MemoryStore`.
 
@@ -75,6 +77,23 @@ Capas:
 5. `internal/storage` + `internal/server`: memoria en RAM + protocolo RESP opcional.
 
 Dependencias inyectadas desde `cmd/api/main.go`.
+
+## CORS
+
+El middleware CORS se registra globalmente en `internal/routes/routes.go` con `r.Use(middleware.GetCorsConfig())`.
+
+Configuracion actual:
+
+- `AllowAllOrigins=true`
+- Metodos: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`
+- Headers permitidos: `Origin`, `Content-Type`, `Authorization`, `X-Internal-Secret`
+- `AllowCredentials=true`
+- `MaxAge=12h`
+
+Testing:
+
+- `pkg/middleware/cors_test.go` valida headers CORS en request simple.
+- `pkg/middleware/cors_test.go` valida preflight `OPTIONS` (metodos, headers y credentials).
 
 ## Rate Limiting
 

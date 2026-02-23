@@ -32,6 +32,7 @@ func SetupRoutes(
 	strictURL := middleware.NewRateLimiter(rate.Every(time.Minute/5), 5)
 
 	r.Use(globalURL.Middleware())
+	r.Use(middleware.GetCorsConfig())
 
 	r.GET("/health", middleware.AuthMiddleware(cfg.JWTSecret), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
