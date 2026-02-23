@@ -8,6 +8,7 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 - [Caracteristicas principales](#caracteristicas-principales)
 - [Tecnologias utilizadas](#tecnologias-utilizadas)
 - [Arquitectura del sistema](#arquitectura-del-sistema)
+- [Rate Limiting](#rate-limiting)
 - [Flujo de checkout y pago con control de stock](#flujo-de-checkout-y-pago-con-control-de-stock)
 - [Carrito en memoria (24h) y Redis TCP opcional](#carrito-en-memoria-24h-y-redis-tcp-opcional)
 - [Estructura del proyecto](#estructura-del-proyecto)
@@ -49,6 +50,7 @@ La aplicacion sigue el patron `Handler -> Service -> Repository -> Database`.
 - Carrito en memoria con TTL 24h renovado en escrituras.
 - Endpoints de carrito para agregar, actualizar, remover items, limpiar carrito y checkout.
 - Ownership enforcement en ordenes: cada usuario solo puede ver/modificar/pagar sus ordenes.
+- Rate limiting por IP (global y estricto en autenticacion).
 - Redis TCP opcional compartiendo el mismo `MemoryStore`.
 
 ## 🛠️ Tecnologias utilizadas
@@ -73,6 +75,17 @@ Capas:
 5. `internal/storage` + `internal/server`: memoria en RAM + protocolo RESP opcional.
 
 Dependencias inyectadas desde `cmd/api/main.go`.
+
+## Rate Limiting
+
+El proyecto aplica control de tasa por IP con middleware:
+
+- `globalURL`: `10 req/s` con `burst=20` para todas las rutas.
+- `strictURL`: `5 req/min` con `burst=5` para endpoints sensibles de auth:
+  - `POST /users/register`
+  - `POST /users/login`
+
+Cuando se excede el limite, la API responde `429 Too Many Requests`.
 
 ## Flujo de checkout y pago con control de stock
 
@@ -166,8 +179,7 @@ in-memory-database-engine/
 ├── pkg/
 │   ├── middleware/
 │   │   └── auth.go
-│   ├── response/
-│   │   └── response.go
+│   │   └── rate_limit.go
 │   └── utils/
 ├── .env.template
 ├── go.mod
