@@ -23,3 +23,37 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  prometheus:
+    container_name: in-memory-db-prometheus
+    image: prom/prometheus
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ${PROMETHEUS_CONFIG_PATH:-./prometheus.yml}:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  grafana:
+    container_name: in-memory-db-grafana
+    image: grafana/grafana
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_data:
+  grafana_data:

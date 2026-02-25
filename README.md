@@ -10,6 +10,7 @@ API REST para gestion de e-commerce con arquitectura por capas, JWT, PostgreSQL 
 - [Arquitectura del sistema](#arquitectura-del-sistema)
 - [CORS](#cors)
 - [Rate Limiting](#rate-limiting)
+- [Observabilidad (Prometheus + Grafana)](#observabilidad-prometheus--grafana)
 - [Flujo de checkout y pago con control de stock](#flujo-de-checkout-y-pago-con-control-de-stock)
 - [Carrito en memoria (24h) y Redis TCP opcional](#carrito-en-memoria-24h-y-redis-tcp-opcional)
 - [Estructura del proyecto](#estructura-del-proyecto)
@@ -105,6 +106,41 @@ El proyecto aplica control de tasa por IP con middleware:
   - `POST /users/login`
 
 Cuando se excede el limite, la API responde `429 Too Many Requests`.
+
+## Observabilidad (Prometheus + Grafana)
+
+El proyecto utiliza Prometheus para recolectar metricas y Grafana para visualizarlas con consultas PromQL.
+
+Provisioning incluido en el repositorio:
+
+- Data source de Prometheus: `grafana/provisioning/datasources/prometheus.yml`
+- Provider de dashboards: `grafana/provisioning/dashboards/dashboards.yml`
+- Dashboard versionado: `grafana/dashboards/in-memory-db-observability.json`
+
+Al levantar observabilidad con Docker Compose, Grafana carga automaticamente el datasource y el dashboard.
+
+Graficos recomendados del dashboard:
+
+- `RPS Total` (`Stat`): carga global instantanea de la API.
+- `Requests In Flight` (`Gauge`): concurrencia actual y presion en tiempo real.
+- `Latencia Promedio Global (ms)` (`Stat`): rendimiento promedio general.
+- `Latencia P99 Global (ms)` (`Stat`): cola extrema (peor 1%), util para detectar picos.
+- `RPS por Status` (`Time series`): salud de respuestas por codigo (`2xx/4xx/5xx`).
+- `RPS por Endpoint` (`Time series`): endpoints con mayor trafico.
+- `Latencia P95 por Endpoint (ms)` (`Time series`): experiencia real por ruta, evitando sesgo del promedio.
+- `Total Requests por Endpoint/Status` (`Table` o `Bar chart`): volumen acumulado por ruta y estado.
+- `CPU del Proceso` (`Time series`, `rate(process_cpu_seconds_total[5m])`): consumo de CPU de la app.
+- `Memoria Residente` (`Time series`, `process_resident_memory_bytes`): RAM real usada por el proceso.
+- `Heap Go` (`Time series`, `go_memstats_heap_alloc_bytes`): memoria de heap de Go, util para tendencia/fugas.
+- `Goroutines` (`Time series`, `go_goroutines`): nivel de concurrencia interna del runtime.
+- `Open FDs` (`Time series`, `process_open_fds`): uso de descriptores de archivo/sockets.
+
+Notas de seguridad:
+
+- En `prometheus.yml`, reemplaza `remote_write.url`, `username` y `password` por los valores reales de tu stack de Grafana Cloud.
+- Nunca subas API keys reales al repositorio.
+- Para uso local con secretos, usa un archivo no versionado (`prometheus.local.yml`) y configura `PROMETHEUS_CONFIG_PATH=./prometheus.local.yml` en `.env`.
+- En EC2, `infra/terraform` publica los valores de `remote_write` en SSM y `fetch-env.sh` genera `/opt/in-memory-db/prometheus.yml` automaticamente.
 
 ## Flujo de checkout y pago con control de stock
 
@@ -309,6 +345,9 @@ DB_MAX_OPEN_CONNS=20
 DB_MAX_IDLE_CONNS=10
 DB_CONN_MAX_LIFETIME=5m
 DB_CONN_MAX_IDLE_TIME=1m
+PROMETHEUS_CONFIG_PATH=./prometheus.yml
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=admin
 ```
 
 ### 4) Ejecutar API
@@ -410,6 +449,12 @@ Completar `terraform.tfvars` (minimo):
 
 - `database_url`
 - `jwt_secret`
+
+Opcional (observabilidad en Grafana Cloud desde EC2):
+
+- `prometheus_remote_write_url`
+- `prometheus_remote_write_username`
+- `prometheus_remote_write_password`
 
 ### 2) Crear infraestructura
 
@@ -721,6 +766,9 @@ Configura en GitHub (`Settings -> Branches` o `Rulesets`) para `main`:
 | `DB_MAX_IDLE_CONNS` | Maximo de conexiones inactivas en pool | No | `10` |
 | `DB_CONN_MAX_LIFETIME` | Tiempo maximo de vida de conexion DB | No | `5m` |
 | `DB_CONN_MAX_IDLE_TIME` | Tiempo maximo inactiva de conexion DB | No | `1m` |
+| `PROMETHEUS_CONFIG_PATH` | Ruta de config de Prometheus en Docker Compose | No | `./prometheus.yml` |
+| `GF_SECURITY_ADMIN_USER` | Usuario admin de Grafana local | No | `admin` |
+| `GF_SECURITY_ADMIN_PASSWORD` | Password admin de Grafana local | No | `admin` |
 
 ## 🧪 Scripts y comandos
 

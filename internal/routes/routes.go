@@ -33,6 +33,9 @@ func SetupRoutes(
 
 	r.Use(globalURL.Middleware())
 	r.Use(middleware.GetCorsConfig())
+	r.Use(middleware.MetricsMiddleware())
+
+	r.GET("/metrics", middleware.MetricsHandler())
 
 	r.GET("/health", middleware.AuthMiddleware(cfg.JWTSecret), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

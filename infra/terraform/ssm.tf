@@ -67,3 +67,27 @@ resource "aws_ssm_parameter" "db_conn_max_idle_time" {
   value     = var.db_conn_max_idle_time
   overwrite = true
 }
+
+resource "aws_ssm_parameter" "prometheus_remote_write_url" {
+  count     = var.prometheus_remote_write_url != "" ? 1 : 0
+  name      = "${local.ssm_parameter_prefix}/PROMETHEUS_REMOTE_WRITE_URL"
+  type      = "String"
+  value     = var.prometheus_remote_write_url
+  overwrite = true
+}
+
+resource "aws_ssm_parameter" "prometheus_remote_write_username" {
+  count     = var.prometheus_remote_write_username != "" ? 1 : 0
+  name      = "${local.ssm_parameter_prefix}/PROMETHEUS_REMOTE_WRITE_USERNAME"
+  type      = "String"
+  value     = var.prometheus_remote_write_username
+  overwrite = true
+}
+
+resource "aws_ssm_parameter" "prometheus_remote_write_password" {
+  count     = var.prometheus_remote_write_password != "" ? 1 : 0
+  name      = "${local.ssm_parameter_prefix}/PROMETHEUS_REMOTE_WRITE_PASSWORD"
+  type      = "SecureString"
+  value     = var.prometheus_remote_write_password
+  overwrite = true
+}
