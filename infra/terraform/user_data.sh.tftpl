@@ -114,6 +114,31 @@ ExecStopPost=-/usr/bin/docker rm -f ${container_name}
 WantedBy=multi-user.target
 EOF
 
+cat > /etc/systemd/system/in-memory-db-prometheus.service <<EOF
+[Unit]
+Description=In Memory DB Prometheus Service
+After=network-online.target docker.service in-memory-db.service
+Wants=network-online.target in-memory-db.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+
+ExecStartPre=/usr/local/bin/fetch-env.sh
+ExecStartPre=-/usr/bin/docker rm -f ${prometheus_container_name}
+ExecStartPre=/usr/bin/docker pull ${prometheus_image}
+ExecStart=/usr/bin/docker run --name ${prometheus_container_name} --network host --volume /opt/in-memory-db/prometheus.yml:/etc/prometheus/prometheus.yml:ro --restart unless-stopped ${prometheus_image} --config.file=/etc/prometheus/prometheus.yml --web.listen-address=127.0.0.1:9090
+ExecStop=/usr/bin/docker stop ${prometheus_container_name}
+ExecStopPost=-/usr/bin/docker rm -f ${prometheus_container_name}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 systemctl daemon-reload
 systemctl enable in-memory-db
+systemctl enable in-memory-db-prometheus
 systemctl start in-memory-db
+systemctl start in-memory-db-prometheus

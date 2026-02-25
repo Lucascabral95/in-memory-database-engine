@@ -29,15 +29,18 @@ resource "aws_instance" "api" {
   vpc_security_group_ids      = [aws_security_group.public_open.id]
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
   associate_public_ip_address = true
+  user_data_replace_on_change = true
 
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
-    aws_region           = var.aws_region
-    ssm_parameter_prefix = local.ssm_parameter_prefix
-    ecr_repository_url   = aws_ecr_repository.api.repository_url
-    ecr_registry         = split("/", aws_ecr_repository.api.repository_url)[0]
-    app_port             = var.port
-    redis_port           = var.redis_tcp_port
-    container_name       = "${local.name_prefix}-api"
+    aws_region                = var.aws_region
+    ssm_parameter_prefix      = local.ssm_parameter_prefix
+    ecr_repository_url        = aws_ecr_repository.api.repository_url
+    ecr_registry              = split("/", aws_ecr_repository.api.repository_url)[0]
+    app_port                  = var.port
+    redis_port                = var.redis_tcp_port
+    container_name            = "${local.name_prefix}-api"
+    prometheus_container_name = "${local.name_prefix}-prometheus"
+    prometheus_image          = "prom/prometheus"
   })
 
   root_block_device {

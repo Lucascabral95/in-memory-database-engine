@@ -136,7 +136,7 @@ jobs:
             --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy in-memory-db ${GITHUB_SHA}" \
-            --parameters 'commands=["sudo /usr/local/bin/fetch-env.sh","sudo systemctl restart in-memory-db","sudo systemctl status in-memory-db --no-pager"]' \
+            --parameters 'commands=["sudo /usr/local/bin/fetch-env.sh","sudo systemctl daemon-reload","sudo systemctl restart in-memory-db","if systemctl list-unit-files | grep -q in-memory-db-prometheus.service; then sudo systemctl restart in-memory-db-prometheus; fi","sudo systemctl status in-memory-db --no-pager","if systemctl list-unit-files | grep -q in-memory-db-prometheus.service; then sudo systemctl status in-memory-db-prometheus --no-pager; fi"]' \
             --query "Command.CommandId" \
             --output text)
 
