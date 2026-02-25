@@ -1,0 +1,25 @@
+# VCS and CI
+.git
+.github
+
+# Local env / tooling
+.env
+.env.*
+!.env.template
+
+# Build artifacts
+bin
+coverage*
+*.out
+
+# Infra and local docs that are not needed to build API binary
+infra
+postman
+README.md
+CLAUDE.md
+
+# Terraform local/state files
+*.tfstate
+*.tfstate.*
+.terraform
+.terraform.lock.hcl

@@ -16,6 +16,7 @@ set -euo pipefail
 REGION="${aws_region}"
 PREFIX="${ssm_parameter_prefix}"
 OUT_FILE="/opt/in-memory-db/.env"
+PROMETHEUS_FILE="/opt/in-memory-db/prometheus.yml"
 
 get_param() {
   aws ssm get-parameter \
@@ -24,6 +25,15 @@ get_param() {
     --region "$REGION" \
     --query 'Parameter.Value' \
     --output text
+}
+
+get_param_optional() {
+  aws ssm get-parameter \
+    --name "$1" \
+    --with-decryption \
+    --region "$REGION" \
+    --query 'Parameter.Value' \
+    --output text 2>/dev/null || true
 }
 
 cat > "$OUT_FILE" <<EOT
@@ -40,6 +50,42 @@ DB_CONN_MAX_IDLE_TIME=$(get_param "${ssm_parameter_prefix}/DB_CONN_MAX_IDLE_TIME
 EOT
 
 chmod 600 "$OUT_FILE"
+
+REMOTE_WRITE_URL=$(get_param_optional "${ssm_parameter_prefix}/PROMETHEUS_REMOTE_WRITE_URL")
+REMOTE_WRITE_USERNAME=$(get_param_optional "${ssm_parameter_prefix}/PROMETHEUS_REMOTE_WRITE_USERNAME")
+REMOTE_WRITE_PASSWORD=$(get_param_optional "${ssm_parameter_prefix}/PROMETHEUS_REMOTE_WRITE_PASSWORD")
+
+RW_URL_ESCAPED=$(printf '%s' "$REMOTE_WRITE_URL" | sed 's/"/\\"/g')
+RW_USER_ESCAPED=$(printf '%s' "$REMOTE_WRITE_USERNAME" | sed 's/"/\\"/g')
+RW_PASS_ESCAPED=$(printf '%s' "$REMOTE_WRITE_PASSWORD" | sed 's/"/\\"/g')
+
+cat > "$PROMETHEUS_FILE" <<EOT
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "api"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["localhost:8080"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+EOT
+
+if [ -n "$REMOTE_WRITE_URL" ] && [ -n "$REMOTE_WRITE_USERNAME" ] && [ -n "$REMOTE_WRITE_PASSWORD" ]; then
+  cat >> "$PROMETHEUS_FILE" <<EOT
+
+remote_write:
+  - url: "$RW_URL_ESCAPED"
+    basic_auth:
+      username: "$RW_USER_ESCAPED"
+      password: "$RW_PASS_ESCAPED"
+EOT
+fi
+
+chmod 600 "$PROMETHEUS_FILE"
 EOF
 
 chmod +x /usr/local/bin/fetch-env.sh

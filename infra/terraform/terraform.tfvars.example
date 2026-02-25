@@ -13,3 +13,6 @@ db_max_open_conns  = 20
 db_max_idle_conns  = 10
 db_conn_max_lifetime = "5m"
 db_conn_max_idle_time = "1m"
+prometheus_remote_write_url = "https://prometheus-prod-XX-prod-YY.grafana.net/api/prom/push"
+prometheus_remote_write_username = "GRAFANA_CLOUD_INSTANCE_ID"
+prometheus_remote_write_password = "GRAFANA_CLOUD_METRICS_PUBLISHER_API_KEY"

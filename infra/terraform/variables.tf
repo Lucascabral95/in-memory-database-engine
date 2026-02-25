@@ -75,3 +75,22 @@ variable "db_conn_max_idle_time" {
   type        = string
   default     = "1m"
 }
+
+variable "prometheus_remote_write_url" {
+  description = "Grafana Cloud Prometheus remote_write endpoint URL."
+  type        = string
+  default     = ""
+}
+
+variable "prometheus_remote_write_username" {
+  description = "Grafana Cloud remote_write username (instance ID)."
+  type        = string
+  default     = ""
+}
+
+variable "prometheus_remote_write_password" {
+  description = "Grafana Cloud remote_write API key (MetricsPublisher)."
+  type        = string
+  sensitive   = true
+  default     = ""
+}

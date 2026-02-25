@@ -90,3 +90,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 infra/terraform/terraform.tfvars
+prometheus.local.yml
+*.secrets.env

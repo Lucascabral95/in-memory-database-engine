@@ -63,6 +63,11 @@ jobs:
       - name: Verify go.mod/go.sum are tidy
         run: go mod tidy -diff
 
+      - name: Verify Swagger docs are up to date
+        run: |
+          go run github.com/swaggo/swag/cmd/swag@v1.8.12 init -g cmd/api/main.go -o docs
+          git diff --exit-code -- docs/docs.go docs/swagger.json docs/swagger.yaml
+
       - name: Run static analysis
         run: go vet ./...
 
