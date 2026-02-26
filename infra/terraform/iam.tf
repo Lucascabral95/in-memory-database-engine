@@ -32,10 +32,21 @@ data "aws_iam_policy_document" "ec2_ssm_access" {
     effect = "Allow"
     actions = [
       "ssm:GetParameter",
-      "ssm:GetParameters",
+      "ssm:GetParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_parameter_prefix}/*"
+    ]
+  }
+
+  statement {
+    sid    = "ReadProjectParametersByPath"
+    effect = "Allow"
+    actions = [
       "ssm:GetParametersByPath"
     ]
     resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_parameter_prefix}",
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_parameter_prefix}/*"
     ]
   }
